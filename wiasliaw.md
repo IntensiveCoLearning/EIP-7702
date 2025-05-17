@@ -118,4 +118,10 @@ Smart Wallet Account 則是以 EOA 作為某個 Smart Contract Wallet 的 owner�
 
 ### 2025.05.17
 
+#### 4337 compliance
+
+- 在啟用 7702 的鏈上，eth_sendUserOperation rpc endpoint 可以接受 7702 auth list 的資料。bundler 必須以 set code transaction 打包所有的 auth list
+- 4337 建立 smart wallet account 的資料存在於 PackedUserOperation.initCode。initCode 資料如果以 7702 開頭並以 0x00 填充，則表示此 account 是使用 7702 部署。initCode 不會和 factory 合約互動。initCode 超過 20 bytes，其餘的資料會用於初始化
+- https://eips.ethereum.org/EIPS/eip-4337#support-for-eip-7702-authorizations
+
 <!-- Content_END -->
