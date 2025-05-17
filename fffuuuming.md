@@ -484,7 +484,6 @@ For more, refer to the previous notes
 Loosens the restriction from [EIP-3607](https://eips.ethereum.org/EIPS/eip-3607): An account can originate transaction if its code is like ```0xEF0100 || <address>```, and the address needs to be added ```accessed_addresses``` (EIP-2929)
 #### Transaction propagation
 - ```ReceiptPayload```: mentioned above
-<!-- Content_END -->
 ### 2025-05-18
 #### Concern of Phishing
 Since **A single malicious 7702 type signature can drain your entire wallet in a single transaction**, wallet providers (e.g. MetaMask) may not allow any random dApp (e.g. phishing website) to prompt (trick) users to sign such powerful 7702-type payloads
