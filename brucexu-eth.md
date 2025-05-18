@@ -47,4 +47,63 @@ Delegation Indicator：
   - 作为代理合约，被执行的合约代码使用 EOA 的 context，所以 msg.sender 和 msg.value 都是当前 EOA 的
 - 通过 7702 设置了 Delegation Indicator 就会一直存在，除非被另一个 7702 tx 修改或者清理，不会自动消失，实现持久性
 
+TODO Delegation Indicator 会有多个吗？还是单例？如果设置过多个 authorization tuple，会是什么效果？
+
+# 2025.05.16
+
+可以直接指向 ERC-4337 或者 RIP-7560，这样可以低成本使用。TODO 做一个 Demo。
+
+## Self-sponsoring: allowing tx.origin to set code
+
+tx.origin 始终是最初的 EOA，msg.sender 可能是根据调用递进的。所以之前用 tx.origin == msg.sender 来判断是否有中间调用以及当前调用者是不是一个 EOA。
+
+关于合约里面这个判断逻辑的安全风险，EIP 上面做了简单的分析。
+
+传统的基于 relayer 的 gas sponsorship 流程是这样的：
+
+1. 用户打算对一个 dapp 交互，但是没有 ETH，签署这个交易意图，链下发送给 relayer
+2. relayer（有 ETH 的 EOA），验证有效性和从用户的其他途径收费，然后组装发送 tx，支付 gas
+3. 合约被调用，此时 tx.origin 和 msg.sender 是 relayer，但是合约需要有能力验证签名，将实际功能作用于实际意图发起者
+
+基于 7702 的新的流程：
+
+1. 用户发起 0x04 交易，将 EOA Code 指向委托合约逻辑，然后直接执行委托合约的逻辑
+2. gas 还是需要自己支付，但是不需要 relayer 进行执行
+
+7702 可以让 EOA 可以设置 code 到某些更复杂的 AA 账号，使用相应功能，但是第一步的 Delegation Indicator 的设置费用还是需要的，如果后面不被清理，这是一次性的费用。估计还是需要让钱包进行赞助。
+
+TODO 这里 AA 钱包项目其实可以开发一个 gas airdrop 项目，如果确定要设置和使用当前 AA，则可以在这里领取 gas，同时用于设置 Delegation indicator 到当前 AA。
+
+# 2025.05.17
+
+This EIP breaks a few invariants:
+
+- An account balance can only decrease as a result of a transaction originating from that account.
+  - Once an account has been delegated, any call to the account may also cause the balance to decrease.
+  - 之前的任何 balance 的变动，都是要 EOA 自身去支付 gas 和转账，有了 7702 之后，EOA 变成了 Smart EOA，外部可以调用这个 EOA，然后实际上调用了委托逻辑合约的代码，然后对 EOA 的余额进行操作
+    - 好危险啊，TODO 做一个安全的案例，授权了不安全的委托逻辑合约，可以被外部调用，盗走测试币。如果一个 EOA 曾对某个（可能是恶意的）合约进行了 ERC-20 代币的无限额度授权（approve(spender, type(uint256).max)），然后该 EOA 又通过 EIP-7702 委托给了一个可以被外部调用的、能触发该 spender 合约 transferFrom 的委托逻辑，那么风险会进一步放大。
+- An EOA nonce may not increase after transaction execution has begun.
+  - Once an account has been delegated, the account may call a create operation during execution, causing the nonce to increase.
+- tx.origin == msg.sender can only be true in the topmost frame of execution.
+  - Once an account has been delegated, it can invoke multiple calls per transaction.
+
+EIP-7702 本身不提供直接的风险缓解机制，它赋予了 EOA 这种强大的能力，同时也要求用户和开发者承担相应的责任，TODO 可以做一些基础设施：
+
+- 只委托给受信任的、经过审计的合约：这是最重要的一点。用户在通过 EIP-7702 设置 Delegation Indicator 时，必须极端谨慎，确保其指向的合约地址是完全可信的、代码是安全的、并且经过了严格的第三方安全审计。
+  - 合约审计查询和安全报告
+- 最小权限原则：如果可能，委托的合约应该遵循最小权限原则，只暴露必要的功能，并对这些功能进行严格的访问控制。
+  - 7702 合约授权权限解释工具 + 可能的潜在风险
+- 使用成熟的、标准化的钱包实现：例如，如果 EOA 委托给一个符合 ERC-4337 标准的、经过良好测试的智能账户实现，那么可以依赖该标准和实现的安全性。
+  - 4337 AABeat 的安全性测试标准
+- 权限降级用例的谨慎设计：在实现“权限降级”（例如，创建一个只能与特定 DApp 交互的子密钥）这类用例时，委托逻辑合约需要被精心设计，以确保它不能被滥用来执行超出预期的操作。
+  - 权限控制面板，支持精细化的自定义权限等，或者进行权限管理、撤销等
+- 用户教育和钱包的责任：钱包提供商在支持 EIP-7702 时，有责任向用户清晰地解释这种委托操作的潜在风险，并提供工具来审查和管理委托。可能需要有明确的警告，告知用户他们正在将其账户的控制权（部分或全部）交给另一个合约。
+  - 对 Delegation Indicator 进行 AI 自动化安全扫描和解析，并提示可能风险
+- 及时撤销委托：如果用户怀疑委托的合约有问题，或者不再需要该委托，应尽快通过发送一个新的 EIP-7702 交易，将 Delegation Indicator 指向零地址（0x00...00）来清除委托，或指向一个已知的安全合约。
+  - 急救合约，在调用真实合约的前面，增加一个急救合约 wrapper，可以实现快速的合约调用切断。这个合约可以由安全公司和团队进行管理，仅支持阻断交易的功能
+
+# 2025.05.18
+
+安全的风险还是很高的，EOA delegated to code 之后，任何人都可以发起对这个 EOA Code 的调用，可能会直接清零。所以相关系统可能需要多加注意，不能静态的计算当前 EOA 的余额信息等。
+
 <!-- Content_END -->
