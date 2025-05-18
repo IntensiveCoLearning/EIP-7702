@@ -195,6 +195,17 @@ PER_EMPTY_ACCOUNT_COST × 授權條目數量（約 12500 Gas / 條）
 即使授權失敗或重複，也會收取 Gas
 若授權帳戶先前已存在 → 可部分退還 Gas（避免 DoS）
 
+### 2025.05.18
+7702 會影響一些 opcode 的行為，像是 delegatecall 和 call 和 static call
+
+7702 set account 在被呼叫的情況下，行為和 delegatecall 幾乎雷同
+
+所以
+1. 在 wallet: msgsender 是原本的 EOA
+2. delegation contract: msgsender 是原本的 EOA
+3. external call 過去: msgsender 也還是原本的 EOA
+
+社交恢復或是批量交易等等的都不是 7702主要的功能，這些之前就有了。 7702提供的就只是 "讓錢包變成可以有更直接使用這些功能的途徑"
 ### 2025.07.12
 
 <!-- Content_END -->
