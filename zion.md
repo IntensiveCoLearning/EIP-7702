@@ -57,14 +57,20 @@ timezone: UTC+2
 
 #### EIP-7702 细节
 * 7702 签名过程：`cast wallet sign-auth address --private-key $PRIVATE_KEY --chain chain_id --nonce nonce ==> [chain_id, address, nonce, y_parity r, s]`
-* 其中 address 地址可以是：一本智能合约地址，或者另外一个 Pure EOA（无效授权）；但不能是另外一个 Smart EOA。
+* 其中 `address` 地址可以是：一本智能合约地址，或者另外一个 Pure EOA（无效授权）；但不能是另外一个 Smart EOA。
 
 ### 2025.05.17
 
 #### EIP-7702 风险
 * 7702 签名由钱包工具支持，特别注意的是要严格检查 `chain_id` 与 `nonce`。如果 `chain_id == 0`，则意味该授权签名有可能被重复至其他 EVM 链上，前提是 nonce 刚好匹配。
-* 在执行 7702 初次授权时，无法保证授权与 Smart EOA 存储状态的初始化同时发生，因此合约代码的初始化函数需要检查 `msg.sender == address(this)`，确保Smart EOA仅能通过私钥初始化。
+* 在执行 7702 初次授权时，无法保证授权与 Smart EOA 存储状态的初始化同时发生，因此合约代码的初始化函数需要检查 `msg.sender == address(this)`，确保 Smart EOA 仅能通过私钥初始化。
 * 在执行 7702 再授权时，应谨慎管理 Smart EOA 的存款空间，尽量避免存储冲突。最近实践是遵守ERC-7201标准，将存储空间离散化，以尽可能减少冲突风险。
-* 因为Smart EOA可以调用自身合约接口，通过`tx.origin == msg.sender` 来判断调用者否是为EOA将失效。
-* 最大的风险是钓鱼攻击，即用户被诱导授权签名，将EOA授权给一本恶意合约，EOA资产将有合约代码彻底控制。
+* 因为 Smart EOA 可以调用自身合约接口，通过 `tx.origin == msg.sender` 来判断调用者否是为 EOA 将失效。
+* 最大的风险是钓鱼攻击，即用户被诱导授权签名，将 EOA 授权给一本恶意合约，EOA 资产将有合约代码彻底控制。
+
+### 2025.05.18
+#### EIP-7702 展望
+* 通过 EIP-7702 协议，传统私钥控制的 EOA 账号托管给智能合约代码。在不交出私钥的前提下，将 EOA 控制权转交给智能合约，同时保留私钥拥有撤销托管的能力。
+* 通过特定合约的实现与链外组件的配合，可帮助用户实现无 gas 交互，无需用户支付 gas fee。
+* 可选的 Authorization 包括 WebAuth、Passkey， 来辅助对 EOA 的访问鉴权，将降低链上交互的门槛。
 <!-- Content_END --> 
