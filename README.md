@@ -64,31 +64,33 @@ Telegram：https://t.me/LXDAO/24572
  
 - **学习资料**
 
-EIP-7702 Attack Surfaces: What Developers Should Know
+学习方向在于了解 7702 的基础概念，应用方向，实际案例，以及和其他 EIP 提案的结合
 
-https://www.nethermind.io/blog/eip-7702-attack-surfaces-what-developers-should-know
 
-EIP-7702: A Deep Dive into Smart EOAs with Implementation Examples
+EIP 7702 技术概念：https://docs.biconomy.io/eip7702/explained/
 
-https://hackmd.io/@colinlyguo/SyAZWMmr1x
+EIP 7702 提案：https://eips.ethereum.org/EIPS/eip-7702
 
-A Deep dive into EIP-7702 with best practices [影片]
+EIP 7702 总结：https://media.licdn.com/dms/image/v2/D4D22AQG03Xobor9mqQ/feedshare-shrink_2048_1536/B4DZaUVG9DG0Ao-/0/1746245285654?e=1749081600&v=beta&t=pmXk3YrFztt99aRZ_icekl4ENfAgiWLW0fWoc-HuCb0
 
-https://www.youtube.com/watch?v=uZTeYfYM6fM
+什么是账户抽象：https://learnblockchain.cn/article/5946
 
-EIP-7702 Proposal
+面向应用程序的综合 EIP-7702 指南: https://blog.biconomy.io/a-comprehensive-eip-7702-guide-for-apps/
 
-https://eips.ethereum.org/EIPS/eip-7702
 
-Into the future with EIP 7702
-https://mirror.xyz/0x9FFC14AB8754E4De3b0C763F58564D60f935Ad6F/eiLgBj9iPFmy4s4bmjY2jvEW_7g8YxYMQaHvqm9Xw_o
+EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 
-A Comprehensive EIP-7702 Guide for Apps
-https://blog.biconomy.io/a-comprehensive-eip-7702-guide-for-apps/
 
-EIP-7702 全面指南
-https://learnblockchain.cn/article/13081
+7702 的一些实践：https://www.youtube.com/watch?v=uZTeYfYM6fM
 
+
+7702 与安全性：https://www.nethermind.io/blog/eip-7702-attack-surfaces-what-developers-should-know
+
+
+7702 的未来方向：https://mirror.xyz/0x9FFC14AB8754E4De3b0C763F58564D60f935Ad6F/eiLgBj9iPFmy4s4bmjY2jvEW_7g8YxYMQaHvqm9Xw_o
+
+
+深度技术思考：https://ethereum-magicians.org/t/eip-7702-set-eoa-account-code/19923/3
 
 
 ## 共学激励
