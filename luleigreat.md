@@ -97,5 +97,52 @@ authorization_list=[[chain_id,address,nonce,y_parity,r,s],…]
 3. 昨天的第一个问题，如果其它账户调用智能EOA账户成功（有权限），修改的也是智能EOA账户自己的状态
 
 ### 2025.5.18
+今天又找了一些EIP-7702的资料，对升级有了更深刻的理解：
+1. 关于批量执行操作，[这篇文章](https://learnblockchain.cn/article/11498)给出了一个自己实现批量上链逻辑：
+```
+struct Call {
+    address to;
+    uint256 value;
+    bytes data;
+}
+
+function execute(Call[] calldata calls) external payable {
+    //交易发送者为智能EOA账户，自己发起的多个操作打包，不需要签名验证
+    require(msg.sender == address(this), "Invalid authority");
+    _executeBatch(calls);
+}
+
+function _executeBatch(Call[] calldata calls) internal {
+    uint256 currentNonce = nonce;
+    nonce++;
+
+    for (uint256 i = 0; i < calls.length; i++) {
+        _executeCall(calls[i]);
+    }
+
+    emit BatchExecuted(currentNonce, calls);
+}
+
+function _executeCall(Call calldata callItem) internal {
+    (bool success,) = callItem.to.call{value: callItem.value}(callItem.data);
+    require(success, "Call reverted");
+    emit CallExecuted(msg.sender, callItem.to, callItem.value, callItem.data);
+}
+```
+2. Gas赞助，类似于ERC-4337中的实现：用户签名`UserOperation`发送给Bundler统一打包上链：
+```
+//直接上链
+function execute(Call[] calldata calls) external payable {
+    // 调用者直接执行调用
+}
+//赞助者在验证签名是由 EOA 签署后，代表调用者执行调用。
+function execute(Call[] calldata calls, bytes calldata signature) external payable {
+    byte32 encodedCalls = abi.encodePacked(calls);
+    bytes32 digest = keccak256(abi.encodePacked(nonce, encodedCalls));
+    //这里还原签名地址后可能与白名单进行比较，不一定是msg.sender
+    require(ECDSA.recover(digest, signature) == msg.sender, "Invalid signature");
+    // 赞助者代表调用者执行调用
+}
+```
 
 <!-- Content_END -->
