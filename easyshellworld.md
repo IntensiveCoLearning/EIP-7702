@@ -214,6 +214,81 @@ async fn main() -> Result<()> {
 * **Argent & Argent X SDKs**：钱包库，内置 EIP-4337 账号抽象，支持社交恢复、每日限额、Gas 赞助及模块化安全功能。
 
 
+### 2025.05.18
+* **`authorizationList` 是什么**  
+  * EIP‑7702 新增交易类型（类型号 `0x04`）的特有字段，用于承载离线签名的授权信息。  
+  * 该列表至少包含一个元组，每个元组代表一次授权；若列表为空或元组格式不符合规范，整个交易将被视为无效。  
+
+* **字段详解**  
+  * **`chain_id`**  
+    * 指定签名时使用的链 ID，用于防止重放攻击。  
+    * 在执行交易时，节点会校验元组中的 `chain_id` 与交易对象中的 `chainId` 字段是否一致。  
+
+  * **`address`**  
+    * 代表希望注入并执行的合约部署地址，也称为“Delegate 合约”地址。  
+    * 该地址必须对应一个已部署的合约，并且节点会在执行前将此地址写入 EOA 的代码槽中。  
+
+  * **`nonce`**  
+    * 用于标识该授权的顺序，防止同一授权被重复使用。  
+    * 与普通交易的 `nonce` 类似，但独立于 EOA 的交易 `nonce`，专门用于授权管理。  
+
+  * **签名部分：`y_parity`、`r`、`s`**  
+    * 三者共同构成 ECDSA 签名的分离格式：  
+      * `r`, `s`：签名的两大数值部分。  
+      * `y_parity`：恢复签名时的恢复位（v 的奇偶性），用于精确还原签名者地址。  
+    * 通过 `ecrecover` 恢复出签名者地址，确保只有合法 EOA 所有者的授权才会生效。  
+
+* **验证流程**  
+  * **格式校验**：节点检查 `authorizationList` 非空，且每个元组包含恰好 6 个元素。  
+  * **边界检查**：元组中数值字段（如 `chain_id`, `nonce`, `y_parity`, `r`, `s`）需在 EIP‑7702 规定的范围内。  
+  * **签名验证**：节点使用 `ecrecover` 对 `(chain_id, address, nonce)` 进行哈希运算并验证签名，恢复出的地址必须与交易目标 EOA 一致。  
+  * **代码注入**：验证通过后，节点将按照 `0xef01 00 || address` 的格式，将合约地址写入 EOA 的代码槽中，使其在后续操作中表现如同合约账户。  
+  * **执行与恢复**：交易执行完成后，节点恢复 EOA 原始代码槽（通常为空），保证账户状态不发生永久改变。  
+
+* **错误情况与边界**  
+  * **空列表**：`authorizationList` 长度为零时，交易直接失效。  
+  * **签名不匹配**：若 `ecrecover` 恢复的地址与目标 EOA 不符，视为无效授权。  
+  * **格式不符**：元组元素数量非 6 或字段类型错误均会导致交易失败。  
+
+* **实践建议**  
+  * **使用可靠库**：优先采用成熟工具（如 ethers.js v6+ 的 `signAuthorization`、`prepareTransaction`）来构建和管理 `authorizationList`，以避免编码错误。  
+  * **严格审计**：仅对已审计的 Delegate 合约地址进行授权，防范恶意或漏洞合约注入风险。  
+  * **权限管理**：对于多重签名场景，合理设置 `nonce` 和签名顺序，防止重放攻击或授权滥用。  
+
+```
+import { JsonRpcProvider } from "ethers";
+
+const provider = new JsonRpcProvider("https://sepolia.infura.io/v3/YOUR_KEY");
+const relayer = new Wallet(RELAYER_KEY, provider);
+
+// 查询 nonce
+const txCount = await provider.getTransactionCount(signer.address);  // 用户 EOA 的 nonce :contentReference[oaicite:4]{index=4}
+
+// 构造 tx
+const tx = {
+  type: 0x04,
+  chainId: chainId,
+  nonce: txCount,
+  maxPriorityFeePerGas: utils.parseUnits("2", "gwei"),
+  maxFeePerGas: utils.parseUnits("50", "gwei"),
+  gasLimit: 200000,
+  to: signer.address,          // 通常目标设为自身，EIP‑7702 处理后会执行委托
+  value: 0,
+  data: "0x",                  // 可留空或携带调用 payload
+  accessList: [],              // EIP‑2930 访问列表，可选
+  authorizationList: [
+    [chainId, delegateAddr, authNonce, yParity, r, s]
+  ],                            // 我们生成的授权列表
+};
+
+// 通过第三方 Relayer（付 gas）发送
+const receipt = await relayer.sendTransaction(tx);
+console.log("交易哈希:", receipt.hash);
+```
+
+
+
+
 
 
 
