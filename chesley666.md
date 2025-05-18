@@ -177,5 +177,10 @@ async fn main() -> Result<()> {
 ```
 
 ### 2025.05.18
+7. demo方向  
+[**7702Defender**](https://www.hackquest.io/zh-cn/projects/ETH-Beijing-2025-7702Defender): 谷歌浏览器插件，自动识别交易风险  
+**链上跟单分成系统**：比如一个小虾米A账户订阅鲸鱼B账户，如果赚到钱了，那么通过代理合约自动分成，虾米70%，鲸鱼30%  
+**按周期/区块高度的订阅付费**：  
+**0gas账户**：  
 
 <!-- Content_END -->
