@@ -83,6 +83,9 @@ https://eips.ethereum.org/EIPS/eip-7702
 Into the future with EIP 7702
 https://mirror.xyz/0x9FFC14AB8754E4De3b0C763F58564D60f935Ad6F/eiLgBj9iPFmy4s4bmjY2jvEW_7g8YxYMQaHvqm9Xw_o
 
+A Comprehensive EIP-7702 Guide for Apps
+https://blog.biconomy.io/a-comprehensive-eip-7702-guide-for-apps/
+
 
 
 ## 共学激励
