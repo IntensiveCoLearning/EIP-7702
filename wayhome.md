@@ -23,6 +23,47 @@ t.me/wayhome
 
 <!-- Content_START -->
 
+### 2025.05.18
+
+## 安全注意事项
+
+- Reentrancy Guard： 不要依赖 tx.origin 来防止重入攻击。
+
+- Safe Initialization： 避免使用原子性 init() 调用；使用 initWithSig 以防止抢跑（frontrunning）。
+
+- Use EntryPoint： 要求初始化必须通过 ERC-4337 的 EntryPoint 来调用，以增加安全性。
+
+- Avoid Storage Collisions： 切换 delegation 合同时可能会因存储结构冲突而导致 bug。
+
+- Phishing Risks： 只允许委托到不可变的、使用 CREATE2 部署的合约 —— 不要使用具有变形能力（metamorphic）的合约。
+
+- Minimize Trusted Surface： 委托合约应尽量简洁且易于审计，以减少关键漏洞。
+
+- Use Audited Contracts： 优先使用知名团队（如 Alchemy、Ambire、MetaMask、EF AA team）审计过的合约。
+
+## 最佳实践
+
+- Delegation Contract： 委托合约应遵循账户抽象（AA）标准，兼容 ERC-4337。
+
+- Stay Permissionless： 不要硬编码 relayers；任何人都应该能转发交易，以实现抗审查性。
+
+- Pick 4337 Bundlers： 使用版本 ≥ 0.8 的 EntryPoint 进行 gas 抽象处理。
+
+- dApp Integration： 使用 ERC-5792 或 ERC-6900 与 dApp 集成。目前尚无标准方法供 dApps 直接请求 7702 授权签名。
+
+- Avoid Lock-In： 应坚持使用开放、可互操作的标准，如 Alchemy 的 Modular Account。
+
+- Preserve Privacy： 支持 ERC-20 gas 支付、session key、公有 mempools，以最大限度减少数据泄露。
+
+- Use Proxies： 使用代理进行升级和模块化，无需为每次更改都重新授权 EIP-7702。
+
+## 重要限制
+
+- EOA的私钥依然至高无上的权能：私钥始终可以通过签署新交易来覆盖任何授权。这意味着无法实现真正的多重签名或时间锁功能。
+- 没有部署的持久性：与拥有自己地址的已部署智能合约账户不同，EIP-7702的委托可以被覆盖。这意味着EOA仍然在本质上是一个具有智能功能的EOA，而不是一个真正的智能账户。
+- 多链问题：默认情况下，EIP-7702的授权是链特定的，这意味着用户需要为每个链签署单独的授权。有一种变通方法，用户可以签署一个chain_id 设置为0的授权，这将在所有链上有效。然而，只有当用户的EOA在所有链上具有相同的nonce时，这种方法才有效，而在实践中这很少发生。这个限制可能导致在多链工作时出现同步问题。
+
+
 ### 2025.05.17
 
 ## 测试 EIP-7702 交易
