@@ -130,7 +130,7 @@ https://mirror.xyz/0x9FFC14AB8754E4De3b0C763F58564D60f935Ad6F/eiLgBj9iPFmy4s4bmj
 | [Jack-OuCJ](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/Jack-OuCJ.md) | ✅ | ✅ | ✅ | ✅ |   |
 | [wayhome](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/wayhome.md) | ✅ | ✅ | ✅ | ✅ |   |
 | [nx-xn2002](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/nx-xn2002.md) | ✅ | ✅ | ⭕️ | ✅ |   |
-| [qiaopengjun5162](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/qiaopengjun5162.md) | ✅ | ✅ | ✅ | ✅ |   |
+| [qiaopengjun5162](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/qiaopengjun5162.md) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | [MRzzz-cyber](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/MRzzz-cyber.md) | ✅ | ✅ | ✅ | ⭕️ |   |
 | [brucexu-eth](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/brucexu-eth.md) | ✅ | ✅ | ⭕️ | ⭕️ |   |
 | [jjeejj](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/jjeejj.md) | ⭕️ | ⭕️ | ❌ | | |
@@ -169,6 +169,7 @@ https://mirror.xyz/0x9FFC14AB8754E4De3b0C763F58564D60f935Ad6F/eiLgBj9iPFmy4s4bmj
 | [zion](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/zion.md) | ✅ | ✅ | ✅ | ✅ |   |
 | [kris77z](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/kris77z.md) | ⭕️ | ✅ | ✅ | ✅ |   |
 <!-- END_COMMIT_TABLE -->
+
 
 
 
