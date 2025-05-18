@@ -150,7 +150,7 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 | [Sandybaby07](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/Sandybaby07.md) | ✅ | ✅ | ⭕️ | ✅ |   | | | | | |
 | [a39955720](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/a39955720.md) | ✅ | ✅ | ✅ | ✅ | ✅ | | | | | |
 | [xwwkk](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/xwwkk.md) | ✅ | ✅ | ⭕️ | ⭕️ | ✅ | | | | | |
-| [bamboochen92518](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/bamboochen92518.md) | ✅ | ✅ | ✅ | ✅ |   | | | | | |
+| [bamboochen92518](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/bamboochen92518.md) | ✅ | ✅ | ✅ | ✅ | ✅ | | | | | |
 | [keylen](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/keylen.md) | ⭕️ | ⭕️ | ❌ | | | | | | | |
 | [york](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/york.md) | ✅ | ✅ | ✅ | ✅ |   | | | | | |
 | [Ellen](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/Ellen.md) | ⭕️ | ⭕️ | ❌ | | | | | | | |
@@ -177,6 +177,7 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 | [zion](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/zion.md) | ✅ | ✅ | ✅ | ✅ | ✅ | | | | | |
 | [kris77z](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/kris77z.md) | ⭕️ | ✅ | ✅ | ✅ |   | | | | | |
 <!-- END_COMMIT_TABLE -->
+
 
 
 
