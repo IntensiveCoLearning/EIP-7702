@@ -484,7 +484,49 @@ For more, refer to the previous notes
 Loosens the restriction from [EIP-3607](https://eips.ethereum.org/EIPS/eip-3607): An account can originate transaction if its code is like ```0xEF0100 || <address>```, and the address needs to be added ```accessed_addresses``` (EIP-2929)
 #### Transaction propagation
 - ```ReceiptPayload```: mentioned above
+#### Reference
+- [In-Depth Discussion on EIP-7702 and Best Practices](https://defihacklabs.substack.com/p/in-depth-discussion-on-eip-7702-and)
+- [EIP-7702](https://eips.ethereum.org/EIPS/eip-7702)
 ### 2025-05-18
+#### Compatibility with ERC-4337
+![截圖 2025-05-17 晚上10.08.53](https://hackmd.io/_uploads/HkQAjwDWgg.png)
+🟩 **PREPARATION PHASE**
+1. User signs ```authorization tuple```
+2. User signs ```UserOperation```
+    - sender = EOA address
+	- Includes signature over ```(callData, nonce, gas ...)```, etc.
+	- This is what the smart wallet code will verify during ```validateUserOp()```
+3. Dapp/wallet client creates final EIP-7702 ```TranscationPayload```
+    - ```to``` = EntryPoint
+    - ```data``` = ```EntryPoint.handleOps(userOps)```
+	- ```contract_code``` = Minimal Proxy
+
+🟨 **BUNDLER PHASE**
+1. Bundler receives & sends EIP-7702 transaction
+
+🟥 **ON-CHAIN EXECUTION PHASE**
+1. Before execution begins, EIP-7702 rules apply:
+    - The client sets the EOA’s ```code``` to the given ```delegated code``` (i.e., minimal proxy).
+	- From this point on, the EOA behaves like a smart wallet.
+2. EntryPoint executes ```validateUserOp()``` and ```execute()```, which calls the EOA, which delegates to the real smart wallet logic, which checks the signature inside the ```UserOp```, validates the transaction, and executes the actual logic like ```transfer+swap```
+```
+USER → Signs 7702 Auth Tuple (Minimal Proxy Code)
+     → Signs 4337 UserOp
+
+DAPP/WALLET → Combines → Sends to Bundler
+
+BUNDLER → Wraps as EIP-7702 Transaction
+        → Sends to EntryPoint
+
+ETHEREUM CLIENT:
+   - Injects Minimal Proxy Code at EOA addr
+   - EntryPoint calls EOA
+   - EOA now acts like Smart Wallet (via delegatecall)
+   - validateUserOp() & execute() run
+
+AFTER TX:
+   - EOA code is cleared
+```
 #### Concern of Phishing
 Since **A single malicious 7702 type signature can drain your entire wallet in a single transaction**, wallet providers (e.g. MetaMask) may not allow any random dApp (e.g. phishing website) to prompt (trick) users to sign such powerful 7702-type payloads
 - **Wallet**:
@@ -503,7 +545,6 @@ Since **A single malicious 7702 type signature can drain your entire wallet in a
 |     🧩 dApps        |     Might request EOA to act like a smart contract — but should **avoid raw code signing** due to phishing risks.                                                                                                          |
 | 🔐 Wallets    | Must **restrict** or **simulate** 7702 signatures to protect users. Might prefer **controlled workflows via intents** (EIP-5792). |
 
-#### Reference
-- [In-Depth Discussion on EIP-7702 and Best Practices](https://defihacklabs.substack.com/p/in-depth-discussion-on-eip-7702-and)
-- [EIP-7702](https://eips.ethereum.org/EIPS/eip-7702)
+next: see how re-delegation work & the concrn of collsion, see the private key management
+
 <!-- Content_END -->
