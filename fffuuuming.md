@@ -489,7 +489,9 @@ Loosens the restriction from [EIP-3607](https://eips.ethereum.org/EIPS/eip-3607)
 - [EIP-7702](https://eips.ethereum.org/EIPS/eip-7702)
 ### 2025-05-18
 #### Compatibility with ERC-4337
-![截圖 2025-05-17 晚上10.08.53](https://hackmd.io/_uploads/HkQAjwDWgg.png)
+![截圖 2025-05-17 晚上10.08.53](https://hackmd.io/_uploads/HkQAjwDWgg.png
+
+
 🟩 **PREPARATION PHASE**
 1. User signs ```authorization tuple```
 2. User signs ```UserOperation```
@@ -547,4 +549,5 @@ Since **A single malicious 7702 type signature can drain your entire wallet in a
 
 next: see how re-delegation work & the concrn of collsion, see the private key management
 
+### 2025-05-19
 <!-- Content_END -->
