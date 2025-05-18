@@ -65,6 +65,29 @@ EIP-7702 已被納入以太坊 2025 年的 Pectra 升級中，並受到社群廣
 ---
 
 
-### 2025.07.12
+### 2025.05.16
+*Security Risks*
 
+- Lack of access control 
+
+  If the delegate contract lacks proper access controls, attackers can execute arbitrary logic on behalf of the EOA, such as transferring the tokens out of the wallet.
+
+- Initialization challenges 
+
+  * Constructors: when you delegate code to an account, the constructor of the delegation designator contract does not execute in the context of the EOA
+  * Front running and (re)initialization: If the contract uses an initialization pattern, users must make sure that the initialize function has proper access controls and that the contract can not be reinitialized by a malicious user. As a user, you’ll need to delegate and call the initialize function in the same transaction.
+
+- Storage collisions
+  
+  Persistent state across redelegations and upgrades: Delegating code does not clear existing storage. When migrating from one delegation designator contract to another, users and developers must account for the old storage data to prevent storage collisions and unexpected behaviors.
+
+### 2025.05.17
+*Gas sponsorship*  
+Any bundler/relayer can call this contract with correct calldata. EOA performs this required operation, while gas fees are incurred by relayer/bundler.
+
+*Phishing attack of EIP-7702 wallet*  
+A malicious EIP-7702 signature can drain your wallet in a single transaction.
+
+*Transaction batching*  
+Batch multiple transactions into single transaction
 <!-- Content_END -->

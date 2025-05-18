@@ -78,4 +78,74 @@ timezone: UTC+8
 簡單來說，EIP-7702 是讓使用者最低成本享受到智能合約功能的方式，不像是 EIP-4337 需要重新創個帳戶。
 至於 EIP-6551 則只是針對 NFT，這就是另一個故事了。
 
+### 2025.05.16
+
+#### EIP-7702 實際封包差異
+
+在 EIP-2718 前的格式(Type 0, Legacy Transaction)為如下：
+[nonce, gasPrice, gasLimit, to, value, data, v, r, s]
+
+而在 EIP-2718 之後則引入了 Typed Transactions，允許有多種交易種類。
+當地一個 byte 小於 0x7f，表示是 EIP-2718 定義的 typed transaction，常見有如下幾種：
+
+* (0x01) Type 1 (EIP-2930 Access List Transaction)：增加 AccessList 欄位
+* (0x02) Type 2 (EIP-1559 Transaction): 引入了新的 Gas 費用機制
+* (0x03) Type 3 (EIP-4844 Blob Transaction): 用來處理大量的 Blob 數據
+* (0x04) Type 4 (EIP-7702): 也就是我們要探討的主角
+
+下面是 EIP-7702 的格式：
+[chain_id, nonce, max_priority_fee_per_gas, max_fee_per_gas, gas_limit, destination, value, data, access_list, authorization_list, signature_y_parity, signature_r, signature_s]
+
+最主要核心是增加了 authorization_list，這個列表，包含了多個 authorization tuples，每個 tuple 有如下資訊
+
+* chain_id: 鏈的 ID
+* address: 被授權執行程式碼的智能合約位置
+* nonce: EOA 的 nonce
+* y_parity, r, s: 對特定訊息的簽名，用於授權
+
+destination 不能為空，代表不能是創建合約的交易。另外 authorization_list 也不能為空。
+讓我們用 Gas 贊助的例子來說明 destination 和 authorization_list 的差異：
+
+1. EOA 發起 EIP-7702 交易，destination 是目標智能合約、authorization_list 包含 Gas 贊助智能合約的地址
+2. 該 authorization tuples 會包含 EOA 簽名，代表有授權給贊助地址
+3. EVM 會驗證 authorization_list 的 Gas 贊助智能合約
+4. Gas 贊助智能合約會以某種形式為交易支付 Gas 費用
+5. 交易成功送出，原發送者仍為該 EOA，但 Gas 成本由授權合約負擔
+
+雖然交易由 EOA 簽名發出，但授權合約可以攔截交易並代為執行、支付 Gas，類似於 Account Abstraction 的使用者操作（UserOperation）行為
+
+### 2025.05.17
+
+EIP-7702 要注意的問題
+
+* 私鑰仍然需要仔細保管
+* 注意簽署 chainID 為 0 的委託，有可能有多鏈重放的問題
+* EIP-7702 只有更新位址的 code 欄位，並沒有做初始化
+* 如果使用者從 A 合約委託到 B 合約，存儲的結構有可能有變化。所以要確保重新委託後存儲結構是沒有問題。
+* 注意假儲值的風險
+* 外部合約不能假設發起交易的人都是 EOA，可能是 smart contract
+* 開發者要確保跟主流基礎設施兼容
+* 釣魚的風險：如果使用者把 EOA 委託給有問題的智能合約，就會有問題
+
+EIP-7702 可以撤銷授權：把 address 設定為 `0x0000000000000000000000000000000000000000`，就可以把帳戶的 code 欄位變成空
+
+### 2025.05.18
+
+EIP-7702 和 EIP-3074 最主要差別是，前者是一次性事件(該交易生效)，後者則是會持續性生效
+
+EIP-7702 能夠在交易時讓 EVM 多執行某一段我們想要的邏輯
+
+例如
+* 遊戲中使用智慧合約帳戶邏輯但仍保留 EOA 地址
+  * 說明：在遊戲或 DeFi App 中，使用者可以動態地指定交易驗證邏輯來符合遊戲或 App 所需的條件，例如內建的 cooldown 時間或是條件性轉帳。
+  * 實例：
+    * 玩家要移動資源，交易會在智慧合約中檢查 cooldown 時間是否已結束
+    * 玩家交易中加入條件驗證：「如果資源已達到一定量，才能移動」。
+* 支援「付款條件」的付款驗證（如 Paymaster）
+  * 說明：EIP-7702 可以與 Paymaster 模式結合，讓使用者用任意的 token 支付 gas，或在交易中加入複雜條件邏輯（如贊助、後付款）。
+  * 實例：一次性交易：使用者透過 Paymaster 合約簽章來支付交易費。
+* 安全策略臨時更換（如出現異常活動時）
+  * 說明：若偵測到帳戶異常行為，可以透過 EIP-7702 臨時引入更強的驗證邏輯。
+  * 實例：自動啟用「多簽 + 指紋驗證」模式。
+
 <!-- Content_END -->

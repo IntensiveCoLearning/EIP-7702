@@ -144,6 +144,102 @@ ERC-7201、ERC-7779等标准将确保存储安全和重新委托的可靠性。
 ### 2025.05.16
 #### ERC-4337
 
+ERC-4337 是一个以太坊标准，旨在通过链下基础设施实现账户抽象（Account Abstraction, AA），无需修改以太坊核心协议。它于 2023 年 3 月正式部署到以太坊主网，通过引入“用户操作”（User Operations, UserOps）、入口点（EntryPoint）合约和打包者（Bundlers）等机制，赋予账户可编程性，提升用户体验、安全性和开发者灵活性。ERC-4337 被视为以太坊账户抽象的重要里程碑，与 EIP-7702 一起推动了“终极账户抽象”（Endgame Account Abstraction）的实现。
+在 ERC-4337 之前，账户抽象的尝试（如 EIP-3074）因需要修改以太坊协议或引入新操作码（如 AUTH 和 AUTHCALL）而受阻。ERC-4337 的创新在于通过链上智能合约和链下基础设施实现账户抽象，无需硬分叉或协议变更，部署迅速，已在主网广泛应用。
+
+1. ERC-4337 的核心机制  
+   
+   - 核心组件
+
+     - 用户操作（User Operations, UserOps）：  
+         * UserOp 是一个数据结构，包含用户的交易意图（如调用数据、Gas 限制、签名）。它不是标准的以太坊交易，而是通过链下网络提交。  
+         - 格式：sender, nonce, initCode, callData, callGasLimit, verificationGasLimit, preVerificationGas, maxFeePerGas, 
+       maxPriorityFeePerGas, paymasterAndData, signature。  
+         - 作用：定义账户的执行逻辑（如转账、合约调用）和验证方式。    
+     - 打包者（Bundlers）：  
+         - 链下节点，负责收集 UserOps，验证其有效性（如签名和 Gas 可用性），并将其打包为标准以太坊交易，提交到入口点合约。
+         - 类似矿工或验证者，需运行以太坊全节点或 RPC 节点。  
+         - 激励：通过 Gas 费用或支付者合约的奖励获利。  
+     - 入口点（EntryPoint）合约：  
+         一个全局的智能合约，地址固定（如主网为 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789），负责处理 UserOps 的验证和执行。  
+         功能：
+         - 验证 UserOp 的签名和支付者逻辑。
+         - 执行 UserOp 的调用数据（callData）。
+         - 处理 Gas 支付和退款。
+         入口点标准化了账户抽象流程，确保钱包和 DApp 的互操作性。  
+     - 支付者（Paymasters）：  
+         智能合约，负责支付 UserOp 的 Gas 费用，支持 Gas 赞助。  
+         类型：  
+         - DApp 提供的支付者，为用户补贴 Gas。  
+         - 代币支付者，允许用户用 ERC-20 代币（如 USDC）支付 Gas。  
+         - 第三方支付者，如钱包服务商。  
+         支付者需验证 UserOp 的合法性，并与入口点交互完成 Gas 支付。  
+     - 智能合约账户（Smart Contract Wallets）：  
+       - 用户部署的智能合约，定义账户的验证逻辑（如多重签名、时间锁）和执行逻辑。
+       - 与传统 EOA 不同，智能合约账户由代码控制，支持复杂功能。
+     - 聚合器（Aggregators）：  
+       - 可选组件，优化签名验证。例如，多个 UserOps 的签名可以通过聚合器批量验证，降低 Gas 成本。
+       - 常见实现：基于 BLS 签名的聚合。
+   
+   - 执行流程
+
+     - 用户生成 UserOp：    
+      用户通过钱包（如 MetaMask、Safe）创建 UserOp，指定调用数据、Gas 限制和签名。  
+      如果是新账户，UserOp 包含 initCode 用于部署智能合约账户。  
+
+     - UserOp 提交：  
+      UserOp 通过链下网络（如 P2P 或 RPC）发送到打包者。  
+      打包者验证 UserOp 的签名、Gas 可用性和支付者逻辑。  
+
+     - 打包与提交：  
+      打包者将多个 UserOps 合并为一个以太坊交易，调用入口点合约的 handleOps 函数。  
+      交易格式：from: Bundler, to: EntryPoint, data: handleOps(UserOps[])。  
+
+     - 入口点处理：  
+      入口点合约验证每个 UserOp 的签名和支付者逻辑。  
+      执行 UserOp 的 callData，触发智能合约账户或其他目标合约。  
+      处理 Gas 支付，可能从支付者合约扣款。  
+
+     - 链上记录：  
+      链上记录显示为打包者调用入口点合约，资金流和操作细节隐藏在 UserOp 的 callData 中。  
+
+   - Gas 模型  
+      - ERC-4337 引入了多层次 Gas 机制：  
+        - callGasLimit：执行 UserOp 的调用数据所需的 Gas。  
+        - verificationGasLimit：验证签名和支付者逻辑的 Gas。  
+        - preVerificationGas：链下预验证和打包的 Gas（如网络传输成本）。  
+      - 支付者或用户需预存 ETH 或代币，确保 Gas 支付。入口点合约退还多余 Gas。  
+
+2. 功能
+
+   - 可编程验证：
+支持自定义签名方案，如多重签名、WebAuthn、硬件安全模块（HSM）或生物识别。
+例如，一个账户可以要求 3 个签名中的 2 个同意，或结合面部识别和密码。
+
+   - 批量交易：
+多个操作（如授权、转账、兑换）合并为单笔 UserOp，减少 Gas 成本和用户交互。
+示例：用户可以在一次签名中完成 ERC-20 的 approve 和 Uniswap 的 swap。
+
+   - Gas 赞助：
+支付者合约允许 DApp 或第三方支付 Gas 费用，用户无需持有 ETH。
+支持代币支付 Gas（如 USDC），支付者合约处理兑换。
+
+   - 社交恢复：
+账户可以通过信任人或多重签名恢复，无需迁移到新地址。
+示例：用户丢失私钥后，3 个信任人中的 2 个可以授权恢复。
+
+   - 权限控制：
+设置代币支出限额、时间限制或应用白名单，防范钓鱼攻击。
+示例：限制某 DApp 每日最多转账 100 USDC。
+
+   - 自动化操作：
+支持定投（DCA）、订阅支付或自动申领空投。
+示例：智能合约账户定期将 USDC 兑换为 ETH 并存入 DeFi 协议。
+
+   - 跨链兼容性：
+UserOps 可以在 L2 网络（如 Arbitrum）上执行，通过跨链桥与主网交互。
+支付者机制支持跨链 Gas 支付。
+
 ### 2025.05.17
 #### EIP-7702
 
