@@ -86,6 +86,9 @@ https://mirror.xyz/0x9FFC14AB8754E4De3b0C763F58564D60f935Ad6F/eiLgBj9iPFmy4s4bmj
 A Comprehensive EIP-7702 Guide for Apps
 https://blog.biconomy.io/a-comprehensive-eip-7702-guide-for-apps/
 
+EIP-7702 全面指南
+https://learnblockchain.cn/article/13081
+
 
 
 ## 共学激励
