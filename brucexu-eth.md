@@ -106,4 +106,20 @@ EIP-7702 本身不提供直接的风险缓解机制，它赋予了 EOA 这种强
 
 安全的风险还是很高的，EOA delegated to code 之后，任何人都可以发起对这个 EOA Code 的调用，可能会直接清零。所以相关系统可能需要多加注意，不能静态的计算当前 EOA 的余额信息等。
 
+## https://docs.biconomy.io/eip7702/explained/
+
+EIP-7702 bridges this gap by enabling EOAs to behave like smart accounts while maintaining their original addresses and established on-chain history.
+
+## https://media.licdn.com/dms/image/v2/D4D22AQG03Xobor9mqQ/feedshare-shrink_2048_1536/B4DZaUVG9DG0Ao-/0/1746245285654?e=1749081600&v=beta&t=pmXk3YrFztt99aRZ_icekl4ENfAgiWLW0fWoc-HuCb0
+
+需要注意的安全事项和详细的解释案例：
+
+- Reentrancy Guard 重入攻击，不要在使用 tx.origin 进行保护
+  - 重入攻击是 Contract A 调用 Contract B 的时候，没有结束之前，重新调用了 Contract A，如果 balance 设置不正确，就会被恶意抽走
+  - 之前有一种方式是判断 tx.origin == msg.sender 来阻断重入攻击，因为在重入之后，Contract B 成为了 msg.sender，这是不应该出现的
+  - TODO 模拟一个 EOA 调用自己的 Contract，以及 reentrancy attack 看看相关的 tx.origin 和 msg.sender 的内容
+- TODO 还没分析完
+
+TODO 搞一个 Demo，看看 7702 能不能完全 0 gas（第一笔通过 relayer 的方式）实现指向。
+
 <!-- Content_END -->
