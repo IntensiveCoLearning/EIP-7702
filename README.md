@@ -161,7 +161,7 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 | [tofudfy](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/tofudfy.md) | ⭕️ | ⭕️ | ❌ | | | | | | | |
 | [gpteth](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/gpteth.md) | ✅ | ✅ | ✅ | ✅ | ⭕️ |   | | | | |
 | [bobs-1](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/bobs-1.md) | ⭕️ | ⭕️ | ❌ | | | | | | | |
-| [gardennn](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/gardennn.md) | ✅ | ✅ | ✅ | ✅ | ✅ |   | | | | |
+| [gardennn](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/gardennn.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | | | | |
 | [narnona](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/narnona.md) | ⭕️ | ⭕️ | ❌ | | | | | | | |
 | [nghdavid](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/nghdavid.md) | ⭕️ | ✅ | ✅ | ✅ | ✅ |   | | | | |
 | [easyshellworld](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/easyshellworld.md) | ✅ | ✅ | ✅ | ✅ | ✅ |   | | | | |
@@ -177,6 +177,7 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 | [zion](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/zion.md) | ✅ | ✅ | ✅ | ✅ | ✅ |   | | | | |
 | [kris77z](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/kris77z.md) | ⭕️ | ✅ | ✅ | ✅ | ⭕️ |   | | | | |
 <!-- END_COMMIT_TABLE -->
+
 
 
 
