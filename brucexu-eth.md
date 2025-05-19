@@ -118,7 +118,13 @@ EIP-7702 bridges this gap by enabling EOAs to behave like smart accounts while m
   - 重入攻击是 Contract A 调用 Contract B 的时候，没有结束之前，重新调用了 Contract A，如果 balance 设置不正确，就会被恶意抽走
   - 之前有一种方式是判断 tx.origin == msg.sender 来阻断重入攻击，因为在重入之后，Contract B 成为了 msg.sender，这是不应该出现的
   - TODO 模拟一个 EOA 调用自己的 Contract，以及 reentrancy attack 看看相关的 tx.origin 和 msg.sender 的内容
-- TODO 还没分析完
+
+# 2025.05.19
+
+- Safe Initialization: Avoid atomic init() calls – use initWithSig to prevent frontrunning.
+  - frontrunning 就是抢跑，看到 mempool 里面的交易，用更高的 gas 去抢跑执行，所以在 init call 的时候可以抢先执行，将 initialize(ownerAddress) 等操作设置为自己
+  - initWithSig 包括真正 owner 的 sig，然后合约里面进行验证
+  - 在代理合约模式、工厂合约模式等等，通常使用额外的 initialize tx 来对合约进行初始化参数
 
 TODO 搞一个 Demo，看看 7702 能不能完全 0 gas（第一笔通过 relayer 的方式）实现指向。
 
