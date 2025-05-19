@@ -139,4 +139,70 @@ authorization_list = [
 
 此機制讓 EOA 擁有像 proxy 合約的能力，但無需部署 smart contract 即可享有抽象帳戶邏輯。
 
+### 2025.05.16
+
+### EIP-7702：交易流程解析（自我發起與贊助者）
+
+EIP-7702 的核心在於讓 EOA 在不部署合約的前提下，藉由設定特殊 code delegation（`0xef0100 || address`），具備動態執行邏輯的能力。主要分為兩種交易流程：
+
+---
+
+#### 一、自我發起（Self-sponsored）
+
+當 EOA 自身擁有 ETH 且能支付 gas 時，可主動發送 Type 4 交易完成 delegation 與執行邏輯：
+
+1. **EOA 自行簽署授權並發送 Type 4 交易**
+   - 使用者（sender）即 signer，簽署一筆 [chain_id, address, nonce] 的授權資料。
+   - authorization 格式：`[chain_id, address, nonce, y_parity, r, s]`。
+   - 簽章的 msg 為 `keccak256(0x05 || rlp(chain_id, address, nonce))`，ecrecover 還原出 authority（即該 EOA），其 code 欄位會被設為 delegation pointer。
+
+2. **EVM 處理授權與 delegation 設定**
+   - 驗證簽章正確、nonce 合理、帳戶 code 必須為空或可覆蓋 delegation。
+   - 驗證通過後，將該帳戶 code 設為 `0xef0100 || address`，即指向 delegation contract。
+
+3. **執行交易 data（call）**
+   - 若交易目的地址即為 authority，則會觸發代理邏輯（執行 delegation contract 的邏輯，保留原 msg.sender、msg.value、storage）。
+   - 若 call revert，則交易執行結果會回滾，但 code 設定不會還原。
+
+---
+
+#### 二、贊助者模式（Sponsored）
+
+當 EOA 沒有 ETH 或希望他人代付 gas，可採用贊助者模式：
+
+1. **使用者簽署離線授權資訊**
+   - 被授權的 EOA 簽署 [chain_id, address, nonce]，產生簽章（signer 僅用於設定該 EOA 的 code）。
+   - 簽章的 msg 為 `keccak256(0x05 || rlp(chain_id, address, nonce))`，ecrecover 還原出 authority（即被授權帳戶），其 code 欄位會被設為 delegation pointer。
+   - 授權中的 nonce 必須匹配該 EOA 當前 nonce，確保每筆 delegation 只能設定一次，無法重放。
+
+2. **Sponsor 組合並提交 Type 4 交易**
+   - Sponsor 僅負責將授權清單（authorization_list）與 call data 組成交易並送出，不參與簽章。
+   - 可同時包含多筆授權（多個 EOA），以及單一或批次 call data。
+   - 簽名僅用於設定授權者帳戶的 code，而不是 signer 的帳戶。
+
+3. **EVM 處理授權與 delegation 設定**
+   - 對每筆授權資料，驗證簽章、nonce 是否正確，並檢查該帳戶 code 必須為空或 delegation indicator。
+   - 若授權資料無效（簽章錯誤、nonce 不符、code 非空），則該筆授權被拒絕，略過不處理。
+   - 驗證通過者，將其 code 設為 delegation pointer，並將 nonce 增加 1。
+
+4. **執行交易主體 call**
+   - 每筆 call data 會以對應的 delegated EOA 為上下文執行（透過 delegation contract）。
+   - 若多個授權帳戶共用相同 call data，delegation contract 需根據 `msg.sender` 區分執行邏輯，否則可能導致混淆或資安問題。
+
+5. **revert 與批次處理行為**
+   - 若交易過程中任一筆 call 發生 revert，整體交易會回滾（atomicity preserved）。
+   - 若僅 delegation 授權失敗（如簽章錯誤、nonce 不符、code 非空），則不影響其他授權與主體 call 的執行。
+
+---
+
+#### 驗證與安全性補充
+
+- **簽章不可重複使用**：每筆 delegation 授權必須綁定唯一 nonce，只有 nonce 與帳戶當前 nonce 相符時才能設定 delegation。這確保 replay protection。
+- **多筆交易含相同簽章會被拒絕**：若多筆交易嘗試重用相同簽章，因 nonce 不符或 code 非空，授權步驟會被拒絕。
+- **簽章驗證方式**：`ecrecover(keccak256(0x05 || rlp(chain_id, address, nonce)), y_parity, r, s)` 取得 authority（即被授權帳戶）。
+
+---
+
+此兩種模式皆允許 EOA 在無需預先部署智能合約的前提下，實現一次性或動態委派自訂邏輯，並配合 L1 交易機制執行，為帳戶抽象提供更原生且彈性的架構。
+
 <!-- Content_END -->

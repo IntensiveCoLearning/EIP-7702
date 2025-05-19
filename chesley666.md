@@ -40,10 +40,10 @@ gas替付等能力：可以使用代币或者第三方等结算gas
 EIP-7702 集成更精简，而 EIP-4337 提供更全面的账户抽象模型，两者可针对不同场景共存。7702无需中转合约调用，相比4337多次合约调用，bundler打包，消耗更少的gas。7702需要通过硬分叉，节点、rpc、钱包都需要升级才能支持，而4337目前已经支持。[参考](https://mirror.xyz/0x9FFC14AB8754E4De3b0C763F58564D60f935Ad6F/eiLgBj9iPFmy4s4bmjY2jvEW_7g8YxYMQaHvqm9Xw_o)
 
 ### 2025.05.15  
-2. 安全相关  
+2. 安全相关: [8类安全问题](https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day02.md#security-risk-of-eip-7702)
 - 存储冲突：修改授权合约时，要确保修改前后合约存储的slot内容对应一致，[slot相关介绍](https://mixbytes.io/blog/collisions-solidity-storage-layouts)，或者利用ERC7201，使用[存储命名空间](https://www.rareskills.io/post/erc-7201)来避免冲突
 - 骗gas的爆破？【待实践】
-- 老的链上合约，有些使用tx==msg.sender来检验交易是否合法，在7702升级之后需要升级合约，因为存在7702的账户在和这种老合约交互的时候，msg.sender并不一定是真实用户的地址
+- 老的链上合约，有些使用require(msg.sender == tx.origin)来检验交易是否合法，在7702升级之后需要升级合约，因为存在7702的账户在和这种老合约交互的时候，tx.origin并不一定是真实用户的地址
 3. 链上数据浏览
 - [okx的代理合约](https://etherscan.io/address/0x80296FF8D1ED46f8e3C7992664D13B833504c2Bb)
 ```solidity
@@ -56,12 +56,131 @@ modifier onlySelf() {
     _;
 }
 ```
-- [设置7702的EOA](https://holesky.etherscan.io/tx/0x29252bf527155a29fc0df3a2eb7f5259564f5ee7a15792ba4e2ca59318080182) 对比 [取消设置的EOA](https://holesky.etherscan.io/tx/0xd410d2d2a2ad19dc82a19435faa9c19279fa5b96985988daad5d40d1a8ee2269#authorizationlist)
+- [设置7702的EOA](https://holesky.etherscan.io/tx/0x29252bf527155a29fc0df3a2eb7f5259564f5ee7a15792ba4e2ca59318080182) 对比 [取消设置的EOA](https://holesky.etherscan.io/tx/0xd410d2d2a2ad19dc82a19435faa9c19279fa5b96985988daad5d40d1a8ee2269#authorizationlist)(代理合约地址0x0..0，注意和chainid=0区分)  
+取消代理2：直接把 code hash 重設為空值，真正回歸純 EOA
 
 ### 2025.05.16
+3. 协议实现细节：[交易流程](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/wayhome.md#20250516)
+4. [gas成本为什么是12500](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/universe-ron.md#2-gas-%E5%B8%B3%E6%9C%AC---%E7%82%BA%E4%BD%95%E8%A6%81%E6%94%B6-12-500)
 
-### 2025.05.17
+### 2025.05.17  
+[跟着大佬学习](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/easyshellworld.md)  
+5. Pectra升级  
+IP‑7702提案随 Ethereum 2025 年 5 月 7 日上线的 Pectra 升级一并激活，Pectra 是迄今为止最全面的一次硬分叉，包含共 11 项 EIP 标准。  
+| EIP 编号   | 名称                          | 功能简介                           |
+| -------- | --------------------------- | ------------------------------ |
+| EIP‑7702 | Smart Accounts for Everyone | 让 EOA 临时具备智能账户能力               |
+| EIP‑7251 | Enterprise‑Grade Staking    | 单验证者质押上限从 32 ETH 提升至 2,048 ETH |
+| EIP‑7002 | Execution‑Layer Exits       | 允许执行层发起验证者主动退出                 |
+| EIP‑6110 | On‑Chain Deposit Handling   | 缩短验证者激活时间从 \~12h 到 \~13min     |
+| EIP‑7691 | Increased Blobspace         | 区块中 Blobspace 翻倍，促进 L2 数据可用性   |
+| EIP‑7523 | State Bloat Mitigation      | 清理空账户、防止无谓合约创建                 |
+| EIP‑2537 | BLS Precompile              | 内建 BLS12‑381 操作，加速聚合签名         |
+| EIP‑2935 | Historical Hashes           | 存储历史区块哈希，支持无状态客户端              |
+| EIP‑7594 | Peer-to-Peer DAS            | P2P 数据可用性抽样，强化 L2 安全           |
+| …        | …                           | 其他如安全与开发者体验优化等                 |
+
+  
+6. 从本地发起7702交易(rust)  
+```rust
+use alloy::{
+    eips::eip7702::Authorization,
+    network::{EthereumWallet, TransactionBuilder, TransactionBuilder7702},
+    node_bindings::Anvil,
+    primitives::U256,
+    providers::{Provider, ProviderBuilder},
+    rpc::types::TransactionRequest,
+    signers::{local::PrivateKeySigner, SignerSync},
+    sol,
+};
+use eyre::Result;
+
+// 使用 Solidity 合约代码生成 Rust 接口
+sol!(
+    #[allow(missing_docs)]
+    #[sol(rpc, bytecode = "608080604052...")]
+    contract Log {
+        #[derive(Debug)]
+        event Hello();
+        event World();
+
+        function emitHello() public {
+            emit Hello();
+        }
+
+        function emitWorld() public {
+            emit World();
+        }
+    }
+);
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    // 启动本地 Anvil 节点，启用 Prague 硬分叉
+    let anvil = Anvil::new().arg("--hardfork").arg("prague").try_spawn()?;
+
+    // 创建两个用户，Alice 和 Bob
+    let alice: PrivateKeySigner = anvil.keys()[0].clone().into();
+    let bob: PrivateKeySigner = anvil.keys()[1].clone().into();
+
+    // 使用 Bob 的钱包创建提供者
+    let rpc_url = anvil.endpoint_url();
+    let wallet = EthereumWallet::from(bob.clone());
+    let provider = ProviderBuilder::new().wallet(wallet).on_http(rpc_url);
+
+    // 部署 Alice 授权的合约
+    let contract = Log::deploy(&provider).await?;
+
+    // 创建授权对象，供 Alice 签名
+    let authorization = Authorization {
+        chain_id: U256::from(anvil.chain_id()),
+        address: *contract.address(),
+        nonce: provider.get_transaction_count(alice.address()).await?,
+    };
+
+    // Alice 对授权对象进行签名
+    let signature = alice.sign_hash_sync(&authorization.signature_hash())?;
+    let signed_authorization = authorization.into_signed(signature);
+
+    // 准备调用合约的 calldata
+    let call = contract.emitHello();
+    let emit_hello_calldata = call.calldata().to_owned();
+
+    // 构建交易请求
+    let tx = TransactionRequest::default()
+        .with_to(alice.address())
+        .with_authorization_list(vec![signed_authorization])
+        .with_input(emit_hello_calldata);
+
+    // 发送交易并等待广播
+    let pending_tx = provider.send_transaction(tx).await?;
+
+    println!("Pending transaction... {}", pending_tx.tx_hash());
+
+    // 等待交易被包含并获取收据
+    let receipt = pending_tx.get_receipt().await?;
+
+    println!(
+        "Transaction included in block {}",
+        receipt.block_number.expect("Failed to get block number")
+    );
+
+    assert!(receipt.status());
+    assert_eq!(receipt.from, bob.address());
+    assert_eq!(receipt.to, Some(alice.address()));
+    assert_eq!(receipt.inner.logs().len(), 1);
+    assert_eq!(receipt.inner.logs()[0].address(), alice.address());
+
+    Ok(())
+}
+
+```
 
 ### 2025.05.18
+7. demo方向  
+[**7702Defender**](https://www.hackquest.io/zh-cn/projects/ETH-Beijing-2025-7702Defender): 谷歌浏览器插件，自动识别交易风险  
+**链上跟单分成系统**：比如一个小虾米A账户订阅鲸鱼B账户，如果赚到钱了，那么通过代理合约自动分成，虾米70%，鲸鱼30%  
+**按周期/区块高度的订阅付费**：  
+**0gas账户**：  
 
 <!-- Content_END -->

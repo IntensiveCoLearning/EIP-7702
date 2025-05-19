@@ -31,4 +31,22 @@ timezone: UTC+8
 
 [Day2 學習筆記](https://medium.com/@alichen308/day-2-eip-7702-%E6%8A%80%E8%A1%93%E7%B5%90%E6%A7%8B%E8%88%87%E7%B0%BD%E7%AB%A0%E6%A9%9F%E5%88%B6-a76440fb415a)
 
+### 2025.05.16
+- 批量交易（批次轉帳、approve+swap）
+- 氣費贊助（sponsored txs）
+- 權限細分（session keys、子密鑰）
+- Social recovery 與 ZK 恢復流程
+
+[Day3 學習筆記](https://medium.com/@alichen308/day-3-eip-7702-%E6%87%89%E7%94%A8%E5%A0%B4%E6%99%AF%E8%88%87%E5%84%AA%E5%8B%A2%E5%AF%A6%E4%BE%8B-084888ebc08a)
+
+### 2025.05.17
+- 常見弱點總覽（Quantstamp、SlowMist 整理）：
+    - tx.origin 假設破壞
+    - initialize frontrun
+    - storage collision
+    - fake recharge 攻擊（CEX 對 smart EOA 未辨識）
+    - replay delegation
+- EIP-1271 簽名驗證可被繞過？
+
+[Day4 學習筆記]([https://medium.com/p/7ac22d44f398/edit](https://medium.com/@alichen308/day-4-eip-7702%E5%AE%89%E5%85%A8%E8%88%87%E9%98%B2%E7%A6%A6-7ac22d44f398))
 <!-- Content_END -->

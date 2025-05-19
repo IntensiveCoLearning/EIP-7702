@@ -65,6 +65,64 @@ EIP-7702 已被納入以太坊 2025 年的 Pectra 升級中，並受到社群廣
 ---
 
 
-### 2025.07.12
+### 2025.05.16
+*Security Risks*
 
+- Lack of access control 
+
+  If the delegate contract lacks proper access controls, attackers can execute arbitrary logic on behalf of the EOA, such as transferring the tokens out of the wallet.
+
+- Initialization challenges 
+
+  * Constructors: when you delegate code to an account, the constructor of the delegation designator contract does not execute in the context of the EOA
+  * Front running and (re)initialization: If the contract uses an initialization pattern, users must make sure that the initialize function has proper access controls and that the contract can not be reinitialized by a malicious user. As a user, you’ll need to delegate and call the initialize function in the same transaction.
+
+- Storage collisions
+  
+  Persistent state across redelegations and upgrades: Delegating code does not clear existing storage. When migrating from one delegation designator contract to another, users and developers must account for the old storage data to prevent storage collisions and unexpected behaviors.
+
+### 2025.05.17
+*Gas sponsorship*  
+Any bundler/relayer can call this contract with correct calldata. EOA performs this required operation, while gas fees are incurred by relayer/bundler.
+
+*Phishing attack of EIP-7702 wallet*  
+A malicious EIP-7702 signature can drain your wallet in a single transaction.
+
+*Transaction batching*  
+Batch multiple transactions into single transaction
+
+### 2025.05.18
+*Account Abstraction*
+- UserOperation
+  ```
+  struct UserOperation {
+    address sender;
+    uint256 nonce;
+    bytes initCode;
+    bytes callData;
+    uint256 callGasLimit;
+    uint256 verificationGasLimit;
+    uint256 preVerificationGas;
+    uint256 maxFeePerGas;
+    uint256 maxPriorityFeePerGas;
+    bytes paymasterAndData;
+    bytes signature;
+  }
+  ```
+  * 附加字段 - UserOperation 交易结构中的有一些新字段(如: paymasterAndData 等)
+  * 另一个mempool - UserOperation 被发送到一个单独的mempool, 在那里捆绑器可以将 UserOperation 打包成真实的交易，并被包含在一个区块中。
+  * 认证方式 - 对于一个传统交易, 认证总是通过一个私钥的签名来完成, 这个私钥对于一个给定的发起者来说永远不会改变。在UserOperation中,认证是可编程的。
+
+- 捆绑器(Bundler)  
+  捆绑器会监控一个专门为UserOperation建立的 mempool。捆绑器将多个UserOperation捆绑成一个交易, 并将该交易提交给入口点(EntryPoint)合约。捆绑器通过抽取部分 Gas 费用来获得补偿。
+- 入口点(EntryPoint)
+  EntryPoint是一个单例智能合约,用来接收来自捆绑器的交易,然后验证和执行UserOperation
+- EntryPoint的执行过程是如何进行的?
+  在执行过程中, EntryPoint合约通过使用UserOperation中指定的 calldata 来执行UserOperation, 并从智能合约账户中取钱给捆绑器报销合适的ETH来支付Gas
+- Paymaster
+  * Paymaster 是一个ERC-4337定义的智能合约,处理Gas 支付政策。支付政策为 Gas 的支付方式（例如，用什么货币）和由谁支付创造了灵活性，这消除了用户持有区块链原生代币才能与区块链交互的限制。
+  * 允许应用程序开发人员使用其他ERC-20代币实现 Gas 支付
+- 聚合器(Aggregator)
+  * 聚合器是一个智能合约，它实现了一个支持聚合的签名方案
+  * 通过将多个签名合并成一个签名, 聚合器有助于节省calldata成本
 <!-- Content_END -->

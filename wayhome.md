@@ -23,6 +23,223 @@ t.me/wayhome
 
 <!-- Content_START -->
 
+### 2025.05.18
+
+## 安全注意事项
+
+- Reentrancy Guard： 不要依赖 tx.origin 来防止重入攻击。
+
+- Safe Initialization： 避免使用原子性 init() 调用；使用 initWithSig 以防止抢跑（frontrunning）。
+
+- Use EntryPoint： 要求初始化必须通过 ERC-4337 的 EntryPoint 来调用，以增加安全性。
+
+- Avoid Storage Collisions： 切换 delegation 合同时可能会因存储结构冲突而导致 bug。
+
+- Phishing Risks： 只允许委托到不可变的、使用 CREATE2 部署的合约 —— 不要使用具有变形能力（metamorphic）的合约。
+
+- Minimize Trusted Surface： 委托合约应尽量简洁且易于审计，以减少关键漏洞。
+
+- Use Audited Contracts： 优先使用知名团队（如 Alchemy、Ambire、MetaMask、EF AA team）审计过的合约。
+
+## 最佳实践
+
+- Delegation Contract： 委托合约应遵循账户抽象（AA）标准，兼容 ERC-4337。
+
+- Stay Permissionless： 不要硬编码 relayers；任何人都应该能转发交易，以实现抗审查性。
+
+- Pick 4337 Bundlers： 使用版本 ≥ 0.8 的 EntryPoint 进行 gas 抽象处理。
+
+- dApp Integration： 使用 ERC-5792 或 ERC-6900 与 dApp 集成。目前尚无标准方法供 dApps 直接请求 7702 授权签名。
+
+- Avoid Lock-In： 应坚持使用开放、可互操作的标准，如 Alchemy 的 Modular Account。
+
+- Preserve Privacy： 支持 ERC-20 gas 支付、session key、公有 mempools，以最大限度减少数据泄露。
+
+- Use Proxies： 使用代理进行升级和模块化，无需为每次更改都重新授权 EIP-7702。
+
+## 重要限制
+
+- EOA的私钥依然至高无上的权能：私钥始终可以通过签署新交易来覆盖任何授权。这意味着无法实现真正的多重签名或时间锁功能。
+- 没有部署的持久性：与拥有自己地址的已部署智能合约账户不同，EIP-7702的委托可以被覆盖。这意味着EOA仍然在本质上是一个具有智能功能的EOA，而不是一个真正的智能账户。
+- 多链问题：默认情况下，EIP-7702的授权是链特定的，这意味着用户需要为每个链签署单独的授权。有一种变通方法，用户可以签署一个chain_id 设置为0的授权，这将在所有链上有效。然而，只有当用户的EOA在所有链上具有相同的nonce时，这种方法才有效，而在实践中这很少发生。这个限制可能导致在多链工作时出现同步问题。
+
+
+### 2025.05.17
+
+## 测试 EIP-7702 交易
+
+1. 编写合约
+
+- 批量处理执行逻辑
+
+```solidity
+/// @notice 代表批量调用中的单个调用。
+struct Call {
+    address to;
+    uint256 value;
+    bytes data;
+}
+
+/**
+     * @notice 直接执行一批调用。
+     * @dev 此函数旨在供智能账户本身（即 address(this)）调用合约时使用。它检查 msg.sender 是否为合约本身。
+     * @param calls 包含目标地址、ETH 值和 calldata 的 Call 结构体数组。
+     */
+function execute(Call[] calldata calls) external payable {
+    require(msg.sender == address(this), "Invalid authority");
+    _executeBatch(calls);
+}
+
+
+/**
+ * @notice 内部函数，用于执行批量调用。
+ * 合约使用一个随机数（nonce）来防止重放攻击。每次成功执行后，随机数（nonce）都会递增。如果没有实现随机数
+ *（nonce），攻击者可能会多次重放同一笔交易
+ */
+function _executeBatch(Call[] calldata calls) internal {
+    uint256 currentNonce = nonce;
+    nonce++;
+
+    for (uint256 i = 0; i < calls.length; i++) {
+        _executeCall(calls[i]);
+    }
+
+    emit BatchExecuted(currentNonce, calls);
+}
+
+
+    /**
+     * @dev 内部函数，用于执行单个调用。
+     * @param callItem 包含目标地址、价值和调用数据的 Call 结构体。
+     */
+function _executeCall(Call calldata callItem) internal {
+    (bool success,) = callItem.to.call{value: callItem.value}(callItem.data);
+    require(success, "Call reverted");
+    emit CallExecuted(msg.sender, callItem.to, callItem.value, callItem.data);
+}
+```
+
+- 签名验证逻辑
+
+```solidity
+bytes32 digest = keccak256(abi.encodePacked(nonce, encodedCalls));
+require(ECDSA.recover(digest, signature) == msg.sender, "Invalid signature");
+```
+
+- 直接执行或赞助执行
+
+```solidity
+function execute(Call[] calldata calls) external payable {
+    // The caller executes the calls directly
+}
+function execute(Call[] calldata calls, bytes calldata signature) external payable {
+    // A sponsor executes the calls on behalf of the caller
+}
+
+```
+
+2. 运行本地网络
+
+```bash
+anvil --hardfork prague
+```
+
+3.构建合约
+
+```bash
+forge install && forge build
+```
+
+4. 运行部署脚本
+
+```bash
+forge script ./script/BatchCallAndSponsor.s.sol --tc BatchCallAndSponsorScript --broadcast --rpc-url 127.0.0.1:8545
+```
+
+输出如下:
+
+```bash
+Chain 31337
+
+Estimated gas price: 2.000000001 gwei
+
+Estimated total gas used for script: 2718876
+
+Estimated amount required: 0.005437752002718876 ETH
+
+==========================
+
+##### anvil-hardhat
+✅  [Success] Hash: 0xf0c214e5c056c6815c8ba0df3b810ebc9a2496e48616ffd484455849b26e4fb1
+Contract Address: 0x8464135c8F25Da09e49BC8782676a84730C318bC
+Block: 1
+Paid: 0.001049548001049548 ETH (1049548 gas * 1.000000001 gwei)
+
+
+##### anvil-hardhat
+✅  [Success] Hash: 0x6436bc2bfab0f3a1dc501f71963b79d41223db5c24d3a4db2fe2c3635e3d221d
+Contract Address: 0x71C95911E9a5D330f4D621842EC243EE1343292e
+Block: 2
+Paid: 0.000810267154290925 ETH (916855 gas * 0.883746235 gwei)
+
+
+##### anvil-hardhat
+✅  [Success] Hash: 0x7d15797f21602e8b76d9210df673ee68bdc5850304553264f428c41f90086c86
+Block: 3
+Paid: 0.000053771380665105 ETH (68935 gas * 0.780030183 gwei)
+
+
+##### anvil-hardhat
+✅  [Success] Hash: 0x652de80051db83a07e0f64c03eddc01f51fb5a5a9aa3994aa15b98ce43bf7d4b
+Block: 4
+Paid: 0.000033296373116512 ETH (48752 gas * 0.682974506 gwei)
+
+✅ Sequence #1 on anvil-hardhat | Total Paid: 0.00194688290912209 ETH (2084090 gas * avg 0.836687731 gwei)
+
+
+==========================
+
+ONCHAIN EXECUTION COMPLETE & SUCCESSFUL.
+```
+
+
+
+### 2025.05.16
+
+交易流程:
+
+```mermaid
+sequenceDiagram
+    participant 钱包客户端
+    participant 智能账户
+    participant 实现合约
+    participant 赞助者（可选）
+
+    Note over 钱包客户端: 步骤 1：生成授权签名
+    钱包客户端->>钱包客户端: signAuthorization({ contractAddress })
+    钱包客户端-->>智能账户: 针对实现合约字节码的签名授权
+
+    Note over 智能账户: 步骤 2：临时分配字节码
+    智能账户->>实现合约: 使用实现合约字节码
+    智能账户-->>智能账户: 临时升级为智能合约
+
+    Note over 智能账户: 步骤 3：构造交易
+    智能账户->>智能账户: 构建交易
+    智能账户->>智能账户: to = 智能账户地址
+    智能账户->>智能账户: data = encodeFunctionData('execute', [calls])
+
+    Note over 智能账户: 步骤 4：执行交易
+    alt 直接执行
+        智能账户->>智能账户: 发送包含授权列表的交易
+    else 赞助执行
+        赞助者（可选）->>赞助者（可选）: 使用相同的签名授权
+        赞助者（可选）->>智能账户: 赞助者代表智能账户发送交易
+    end
+
+    Note over 智能账户: 步骤 5：恢复为普通 EOA
+    智能账户->>智能账户: 恢复为原始 EOA 状态
+  ```
+
 ### 2025.05.15
 
 ## 协议实现细节

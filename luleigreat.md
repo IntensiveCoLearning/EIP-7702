@@ -41,7 +41,7 @@ authorization_list=[[chain_id,address,nonce,y_parity,r,s],…]
 最终实现的效果是：
 - 从负载（chain_id，address,nonce）和签名（y_parity，r,s）恢复出来的EOA地址设置address字段的地址为委托地址
 - nonce值要与签名恢复出的EOA地址最新nonce一致，且每次授权后，nonce会+1
-- 如果委托地址没被授权，会消耗25000的Gas成本，如果已授权则会部分退款
+- 如果委托地址没被授权，会消耗25000的Gas成本，如果已授权则会部分退款12500
 2. 撤销：用户可以利用 EIP-7702 修改授权地址。如果将 address 字段设置为 0x0000000000000000000000000000000000000000，则以往的授权将被撤销。这将清除账户的代码并将账户的代码哈希重置为空哈希。
 3. 重新委托时，通过ERC-7201避免了存储位置的冲突
 4. 查询交易状态，可以使用`eth_getTransactionReceipt`，查询当前授权，可以通过`eth_getCode`查询code，前缀为"0xef01"开头代表已设置代理地址
@@ -67,10 +67,82 @@ authorization_list=[[chain_id,address,nonce,y_parity,r,s],…]
 1. 需要明确的是，每个账户只能设置一个代理地址，如果设置多个，后面的会覆盖前面，最终只有一个会生效
 2. 授权列表有多个，是一种批量授权的场景（同时解决了Gas代付问题），比如A，B，C，D都要设置地址X为代理地址，但是A-D账户都没有ETH，那么可以分别签署授权，然后把签名及授权payload交给一个有ETH的账户，一起发送到链上，同时实现对4个账户的授权操作
 3. ERC-7201是一种合约规范，像ERC-4337一样，是没有修改链上实现的，需要开发者自己通过合约实现，具体的还得再研究下[ERC-7201 Storage Namespaces Explained](https://www.rareskills.io/post/erc-7201)
-4. EIP-7702还是需要与ERC-4337配合才能实现Gas代付、批量交易等功能，智能EOA只能取代ERC-4337中的钱包账户能力（EOA + CA)
+4. EIP-7702还是需要与ERC-4337配合才能实现Gas代付、批量交易等功能，智能EOA只能取代ERC-4337中的钱包账户能力（EOA + CA）
 
 
 #### 问题
 1. 设置完代理合约地址后，智能EOA账户自己可以调用自己来修改合约状态存储，如果是其它账户调用智能EOA呢，会修改其它账户的状态存储还是智能EOA账户的
+2. 社交恢复的具体实现
+3. 通过其它方式进行身份认证（而非账户私钥）
+
+### 2025.05.17
+
+今天跑了一遍[viem上的7702示例](https://viem.sh/docs/eip7702)，加深了对EIP-7702的理解：
+1. 如果签名授权后，账户要自己发送SetCode交易，那么需要注意nonce值问题（授权增加nonce，发交易又增加一次），失败交易参考：[sepolia](https://sepolia.etherscan.io/tx/0xff9e60c0f5b0ab0ac3055d9f7dcfe7fdb6b1005a00aa9ee8252aaeba19ae966b#authorizationlist)
+```
+    const authorization = await walletClient.signAuthorization({
+        // account: eoa,    //这样是有问题的，会设置失败
+        contractAddress, 
+        executor: 'self'    //注意这一行，这样设置没问题
+    });
+    
+    const hash = await walletClient.writeContract({
+        abi,
+        address: walletClient.account.address,
+        authorizationList: [authorization],
+        functionName: "initialize",
+    })
+```
+2. 在发送SetCode做授权的同时，还可以在同一笔交易中做智能EOA的调用，见上面的代码(`initialize`)
+3. 昨天的第一个问题，如果其它账户调用智能EOA账户成功（有权限），修改的也是智能EOA账户自己的状态
+
+### 2025.5.18
+今天又找了一些EIP-7702的资料，对升级有了更深刻的理解：
+1. 关于批量执行操作，[这篇文章](https://learnblockchain.cn/article/11498)给出了一个自己实现批量上链逻辑：
+```
+struct Call {
+    address to;
+    uint256 value;
+    bytes data;
+}
+
+function execute(Call[] calldata calls) external payable {
+    //交易发送者为智能EOA账户，自己发起的多个操作打包，不需要签名验证
+    require(msg.sender == address(this), "Invalid authority");
+    _executeBatch(calls);
+}
+
+function _executeBatch(Call[] calldata calls) internal {
+    uint256 currentNonce = nonce;
+    nonce++;
+
+    for (uint256 i = 0; i < calls.length; i++) {
+        _executeCall(calls[i]);
+    }
+
+    emit BatchExecuted(currentNonce, calls);
+}
+
+function _executeCall(Call calldata callItem) internal {
+    (bool success,) = callItem.to.call{value: callItem.value}(callItem.data);
+    require(success, "Call reverted");
+    emit CallExecuted(msg.sender, callItem.to, callItem.value, callItem.data);
+}
+```
+2. Gas赞助，类似于ERC-4337中的实现：用户签名`UserOperation`发送给Bundler统一打包上链：
+```
+//直接上链
+function execute(Call[] calldata calls) external payable {
+    // 调用者直接执行调用
+}
+//赞助者在验证签名是由 EOA 签署后，代表调用者执行调用。
+function execute(Call[] calldata calls, bytes calldata signature) external payable {
+    byte32 encodedCalls = abi.encodePacked(calls);
+    bytes32 digest = keccak256(abi.encodePacked(nonce, encodedCalls));
+    //这里还原签名地址后可能与白名单进行比较，不一定是msg.sender
+    require(ECDSA.recover(digest, signature) == msg.sender, "Invalid signature");
+    // 赞助者代表调用者执行调用
+}
+```
 
 <!-- Content_END -->
