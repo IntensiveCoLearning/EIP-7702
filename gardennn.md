@@ -207,5 +207,29 @@ EIP-7702 的核心在於讓 EOA 在不部署合約的前提下，藉由設定特
 
 ### 2025.05.17
 
+### EIP-7702：安全性考量
 
+#### 常見風險與防範建議
+
+- **避免使用 `tx.origin` 作為重入保護（Reentrancy Guard）**：
+  EIP-7702 改變了 `msg.sender == tx.origin` 的判斷方式，建議使用 transient 儲存或標準鎖機制取代 `tx.origin`。
+
+- **避免使用原子初始化（atomic init）**：
+  原子化 `init()` 呼叫可能遭到前置攻擊（frontrunning），建議使用 `initWithSig` 搭配簽章驗證初始化邏輯。
+
+- **初始化應透過 EntryPoint 呼叫以提升安全性**：
+  若採用 4337-compatible 的架構，初始化邏輯應限制由 EntryPoint 呼叫以避免未授權配置。
+
+- **避免 storage layout 衝突（Storage Collisions）**：
+  切換 delegation contract 時應確保使用 ERC-7201 命名空間等機制，避免不同合約之間發生存儲欄位覆蓋。
+
+- **避免委派至具動態行為的合約（如 upgradeable 或 selfdestruct）**：
+  僅應委派至透過 `CREATE2` 部署、不可變的邏輯合約，防止釣魚與意外邏輯改變。
+
+- **最小化信任基礎與攻擊面（Trusted Surface）**：
+  Delegation contract 應保持邏輯簡單、功能封閉、可審計，避免動態 dispatch 或不必要的外部呼叫。
+
+- **選用已審計與可信任的標準合約模組**：
+  優先採用來自 Ambire、Alchemy、MetaMask 或 EF 等已知團隊維護並審計過的模組化合約設計。
+  
 <!-- Content_END -->
