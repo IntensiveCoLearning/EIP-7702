@@ -259,38 +259,6 @@ timezone: UTC+8
 > **TL;DR**：7702 像「FOC 可攜帶鍵盤」，4337 是「高級機械鍵盤」。小事用 7702，大事上 4337。
 
 ---
-
-# 2 🖼️ Mermaid — 雙流比較
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant U as User
-    participant W as Wallet
-    participant L1 as L1 EVM
-    participant B as Bundler
-    participant EP as EntryPoint
-
-    %% --- 7702 Path ---
-    rect rgb(230,255,230)
-        U ->> W: 產生 type 0x04 TX\n(含 authorization_list)
-        W ->> L1: eth_sendRawTransaction
-        L1 ->> L1: [A] 處理 authorization\n    • ecrecover\n    • 寫 delegation
-        L1 ->> L1: [B] 執行 calldata / value
-        L1 -->> U: TX receipt
-    end
-
-    %% --- 4337 Path ---
-    rect rgb(230,230,255)
-        U ->> W: 產生 UserOperation
-        W ->> B: eth_sendUserOperation
-        B ->> EP: handleOps(UserOp)
-        EP ->> L1: 執行\n(驗簽 + call target)
-        L1 -->> EP: 完成
-        EP -->> B: emit events
-        B -->> U: UserOpHash + status
-    end
-```
 ### 2025.05.17
 
 =================
