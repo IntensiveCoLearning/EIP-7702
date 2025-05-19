@@ -83,7 +83,9 @@ func AddressToDelegation(addr common.Address) []byte {
 }
 ```
 
-### Best Practices
+### 2025.05.19
+
+Best Practices
 
 - PrivateKey Management 私钥保护
 - Multi-chain replay  chainId 0  相同的合约地址代码是否一定相同
@@ -95,5 +97,21 @@ func AddressToDelegation(addr common.Address) []byte {
 - Phishing 钓鱼风险
 
 Remember: Not your keys, not your coins.
+
+### 2025.05.20
+
+笔记内容
+
+### 2025.05.21
+
+笔记内容
+
+### 2025.05.22
+
+笔记内容
+
+### 2025.05.23
+
+笔记内容
 
 <!-- Content_END -->

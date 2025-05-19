@@ -11,6 +11,8 @@ timezone: UTC+8
 
 <!-- Content_START -->
 
+My Heptabase Note: [link](https://app.heptabase.com/w/28a395444dcaebbd4181a8f86d4205173faa4458527483662c126a7fae3146a7)
+
 ### 2025.05.14
 
 see below
@@ -177,6 +179,9 @@ EIP-7702 enables Externally Owned Accounts (EOAs) to set their own code via a sp
 * [ERC-7779 Storage Compatibility Checks](https://eips.ethereum.org/EIPS/eip-7779)
 * [SlowMist's False Top-up Explanation](https://slowmist.medium.com/how-does-the-false-top-up-attack-break-through-the-defense-of-the-exchange-d6e8ebb434f5)
 
+### 2025.05.18
+
+check in first lolll
 
 <!-- Content_END -->
 

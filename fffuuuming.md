@@ -484,7 +484,51 @@ For more, refer to the previous notes
 Loosens the restriction from [EIP-3607](https://eips.ethereum.org/EIPS/eip-3607): An account can originate transaction if its code is like ```0xEF0100 || <address>```, and the address needs to be added ```accessed_addresses``` (EIP-2929)
 #### Transaction propagation
 - ```ReceiptPayload```: mentioned above
+#### Reference
+- [In-Depth Discussion on EIP-7702 and Best Practices](https://defihacklabs.substack.com/p/in-depth-discussion-on-eip-7702-and)
+- [EIP-7702](https://eips.ethereum.org/EIPS/eip-7702)
 ### 2025-05-18
+#### Compatibility with ERC-4337
+![截圖 2025-05-17 晚上10.08.53](https://hackmd.io/_uploads/HkQAjwDWgg.png
+
+
+🟩 **PREPARATION PHASE**
+1. User signs ```authorization tuple```
+2. User signs ```UserOperation```
+    - sender = EOA address
+	- Includes signature over ```(callData, nonce, gas ...)```, etc.
+	- This is what the smart wallet code will verify during ```validateUserOp()```
+3. Dapp/wallet client creates final EIP-7702 ```TranscationPayload```
+    - ```to``` = EntryPoint
+    - ```data``` = ```EntryPoint.handleOps(userOps)```
+	- ```contract_code``` = Minimal Proxy
+
+🟨 **BUNDLER PHASE**
+1. Bundler receives & sends EIP-7702 transaction
+
+🟥 **ON-CHAIN EXECUTION PHASE**
+1. Before execution begins, EIP-7702 rules apply:
+    - The client sets the EOA’s ```code``` to the given ```delegated code``` (i.e., minimal proxy).
+	- From this point on, the EOA behaves like a smart wallet.
+2. EntryPoint executes ```validateUserOp()``` and ```execute()```, which calls the EOA, which delegates to the real smart wallet logic, which checks the signature inside the ```UserOp```, validates the transaction, and executes the actual logic like ```transfer+swap```
+```
+USER → Signs 7702 Auth Tuple (Minimal Proxy Code)
+     → Signs 4337 UserOp
+
+DAPP/WALLET → Combines → Sends to Bundler
+
+BUNDLER → Wraps as EIP-7702 Transaction
+        → Sends to EntryPoint
+
+ETHEREUM CLIENT:
+   - Injects Minimal Proxy Code at EOA addr
+   - EntryPoint calls EOA
+   - EOA now acts like Smart Wallet (via delegatecall)
+   - validateUserOp() & execute() run
+
+AFTER TX:
+   - EOA code is cleared
+```
 #### Concern of Phishing
 Since **A single malicious 7702 type signature can drain your entire wallet in a single transaction**, wallet providers (e.g. MetaMask) may not allow any random dApp (e.g. phishing website) to prompt (trick) users to sign such powerful 7702-type payloads
 - **Wallet**:
@@ -503,7 +547,69 @@ Since **A single malicious 7702 type signature can drain your entire wallet in a
 |     🧩 dApps        |     Might request EOA to act like a smart contract — but should **avoid raw code signing** due to phishing risks.                                                                                                          |
 | 🔐 Wallets    | Must **restrict** or **simulate** 7702 signatures to protect users. Might prefer **controlled workflows via intents** (EIP-5792). |
 
-#### Reference
-- [In-Depth Discussion on EIP-7702 and Best Practices](https://defihacklabs.substack.com/p/in-depth-discussion-on-eip-7702-and)
-- [EIP-7702](https://eips.ethereum.org/EIPS/eip-7702)
+next: see how re-delegation work & the concrn of collsion, see the private key management
+
+### 2025-05-19
+#### [ERC-7201: Namespaced Storage Layout]((https://eips.ethereum.org/EIPS/eip-7201))
+It introduces a new annotation: ```/// @custom:storage-location identifier``` used in **NatSpec comments** to indicate where in storage a particular set of variables is stored
+
+**Motivation**:
+- In Solidity and Vyper, in default, variables are laid out sequentially, and mappings and dynamic arrays use ```keccak256``` hashing to compute storage slots, to prevent overwriting.
+    - In **Modular contracts using ```DELEGATECALL```** : All contracts share the same storage
+    - In **Upgradeable contracts (proxy-logic)**: Difficult for newer contract version to introduce new variables
+- Developers use manual storage layout by assigning **pseudorandom roots** (like a ```keccak256("MyNamespace")```) to structs or modulee, and store variables under that root — like **creating separate “sub-trees”**
+    - The Solidity/Vyper compilers don’t know this layout
+    - Tools (like block explorers or static analyzers) can’t interpret it correctly.
+- ERC-7201:  standardizes the way to document this layout:
+    - Use ```@custom:storage-location``` in NatSpec to declare storage roots.
+    - Defines a formula to derive a slot from an identifier (e.g. ```keccak256("my.module.storage")```) — making it collision-safe with existing Solidity storage trees.
+
+**Structure**:
+- Each namespace must be a struct, and annotated with a NatSpec comment
+- ```@custom:storage-location <FORMULA_ID>:<NAMESPACE_ID>```
+    - ```<FORMULA_ID>```: Identifies a formula used to compute the storage location where the namespace is rooted, based on the ```NAMESPACE_ID```
+    - ```NAMESPACE_ID```: a string that identifies a namespace in a contract
+- Instead of using default layout (root at slot 0), namespace allows you choose your own root (based on formula & namespace id), and place your variables there, with its values laid out following the same rules as the default storage layout (mapping, dynamic array)
+
+For example:
+```solidity!
+/// @custom:storage-location erc7201:foobar
+struct FoobarStorage {
+    uint256 value;
+    address owner;
+}
+```
+➡️ “The storage for this struct is located at a namespace with id ```"foobar"``` rooted at ```erc7201("foobar")”```
+
+**Formula**: ```erc7201(id: string) = keccak256(keccak256(id) - 1) & ~0xff```
+
+**Rationale**
+```
+L_root := root 
+        | L_root + n 
+        | keccak256(L_root) 
+        | keccak256(H(k) ⊕ L_root) 
+        | keccak256(L_root ⊕ H(k))
+```
+- ```keccak256(id) - 1```: 
+    - Dynamic data structures may use ```keccak256(slot) + n```
+    - ```keccak256(id) - 1``` may not be enough since namespaces can be larger than 1 slot and would extend into keccak256(id) + n
+    - A second hash ```keccak256(keccak256(id) - 1)``` guarantee that namespaces are completely disjoint from standard storage, thanks for ```keccak256``` collision resistance
+#### [ERC-7779: Interoperable Delegated Accounts](https://eips.ethereum.org/EIPS/eip-7779)
+Interface for delegated EOA to enable better redelegation  and storage management between wallets
+![截圖 2025-05-19 晚上9.38.48](https://hackmd.io/_uploads/S10KV3dbgl.png)
+#### TODO Learning:
+- re-delegation related eip
+- Gas fee model: [EIP-1559](https://eips.ethereum.org/EIPS/eip-1559)
+- [EIP-2929](https://eips.ethereum.org/EIPS/eip-2929), [EIP-2930](https://eips.ethereum.org/EIPS/eip-2930)
+- Shard Blob Transaction: [EIP-4844](https://eips.ethereum.org/EIPS/eip-4844)
+- Storaged banned instruction: [EIP-7562](https://eips.ethereum.org/EIPS/eip-7562)
+- [Use case EXP-0001](https://ithaca.xyz/updates/exp-0001)
+- Private key management: [EIP-7851](https://eips.ethereum.org/EIPS/eip-7851)
+- Domain separator: [EIP-712](https://eips.ethereum.org/EIPS/eip-712)
+- Wallet call API: [EIP-5792](https://eips.ethereum.org/EIPS/eip-5792)
+- EIP-4337
+
+next: EIP-7779 detail, private key management, eip-4337
+
 <!-- Content_END -->
