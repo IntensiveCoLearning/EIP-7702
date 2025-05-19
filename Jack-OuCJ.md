@@ -47,4 +47,11 @@ Day 4 笔记：https://www.notion.so/Day-4-EIP-7702-Recovery-1f5f5920d54c809eb87
 
 Day 5 笔记：https://www.notion.so/Day-5-1f7f5920d54c80c3b566f9817dcc1972?pvs=4
 
+### 2025.05.19
+记录了Set Code 代付 Gas 的代码实践
+
+Day 6 笔记：https://www.notion.so/Day-6-Set-Code-Gas-1f8f5920d54c8022a639ce72f1b86faa?pvs=4
+
+
+
 <!-- Content_END -->
