@@ -231,5 +231,48 @@ EIP-7702 的核心在於讓 EOA 在不部署合約的前提下，藉由設定特
 
 - **選用已審計與可信任的標準合約模組**：
   優先採用來自 Ambire、Alchemy、MetaMask 或 EF 等已知團隊維護並審計過的模組化合約設計。
-  
+
+### 2025.05.18
+
+### EIP-7702：Delegation 合約的設計原則
+
+#### 一、設計核心與部署原則
+
+- 委派合約應透過 **CREATE2 部署**，保證 deterministic address，可預先驗證與靜態指向。
+- 合約邏輯應明確不可變，**避免使用 upgradeable patterns 或具毀損性的 selfdestruct**。
+- 每個 delegation contract 應對應特定業務目的，避免萬用 dispatch 結構。
+
+#### 二、簽章驗證與使用者授權綁定
+
+- 每筆簽章應與交易中實際使用的 **msg.sender、calldata、gas、value、nonce（或 salt）一致**。
+- EIP-7702 的簽章驗證格式為：`ecrecover(keccak256(0x05 || rlp([chain_id, address, nonce])), y_parity, r, s)`
+- 為提升互通性與安全性，推薦使用 **EIP-712 標準格式** 建立簽章內容。
+
+#### 三、多使用者支援設計
+
+- 若允許多帳戶共用 delegation contract，應設計適當資料結構以管理權限，例如：
+  ```solidity
+  mapping(address => Permission) public permissions;
+  ```
+- 可擴充設計如：
+  - 每個 signer 可被限制僅能呼叫特定函式 selector
+  - 支援每日限額、可互動的 target contract 白名單等
+
+#### 四、meta 資訊與風控擴充欄位
+
+- 建議加入簽章參數：
+  - `purpose`：明確表示簽章用途（如 mint、transfer）
+  - `chainId`：防止跨鏈重放攻擊
+  - `deadline`：簽章過期時間
+- 可考慮加上 session ID、防重放 hash、或交易 domain 作為額外驗證。
+
+#### 五、安全與審計建議
+
+- 每筆簽章只能用一次，nonce 應與帳戶當前 nonce 精準匹配，避免重複授權。
+- delegation 合約實作應通過靜態分析工具（如 Slither）與形式驗證（如 MythX）。
+- 請避免動態 dispatch 結構與過多 call、delegatecall，減少潛在攻擊面。
+- 設計應符合最小信任原則與模組化（如 OpenZeppelin AccessControl）。
+
+> EIP-7702 的 delegation contract 並非萬用 proxy，應精確對應特定交易型態或邏輯，實作時宜採 whitelist、限權、風控多層交叉驗證，並以低複雜度、高可審計為原則。
+
 <!-- Content_END -->
