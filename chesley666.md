@@ -37,7 +37,10 @@ gas替付等能力：可以使用代币或者第三方等结算gas
 通过tx==msg.sender来检查交易是否合法的合约，需要重新设计安全检查，因为有了7702之后，交易发起者不一定是实际用户  
 
 - 与 EIP-4337 比较：  
-EIP-7702 集成更精简，而 EIP-4337 提供更全面的账户抽象模型，两者可针对不同场景共存。7702无需中转合约调用，相比4337多次合约调用，bundler打包，消耗更少的gas。7702需要通过硬分叉，节点、rpc、钱包都需要升级才能支持，而4337目前已经支持。[参考](https://mirror.xyz/0x9FFC14AB8754E4De3b0C763F58564D60f935Ad6F/eiLgBj9iPFmy4s4bmjY2jvEW_7g8YxYMQaHvqm9Xw_o)
+    - EIP-7702 和 ERC-4337 都旨在推进账户抽象（Account Abstraction, AA），使外部拥有账户（EOA）能够拥有类似智能合约的功能.  
+    - EIP-7702 集成更精简，而 EIP-4337 提供更全面的账户抽象模型，两者可针对不同场景共存。7702无需中转合约调用，相比4337多次合约调用，bundler打包，消耗更少的gas。  
+    - 7702需要通过硬分叉，节点、rpc、钱包都需要升级才能支持，而4337目前已经支持。
+    - [参考](https://mirror.xyz/0x9FFC14AB8754E4De3b0C763F58564D60f935Ad6F/eiLgBj9iPFmy4s4bmjY2jvEW_7g8YxYMQaHvqm9Xw_o)  
 
 ### 2025.05.15  
 2. 安全相关: [8类安全问题](https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day02.md#security-risk-of-eip-7702)
@@ -45,6 +48,7 @@ EIP-7702 集成更精简，而 EIP-4337 提供更全面的账户抽象模型，�
 - 骗gas的爆破？【待实践】
 - 老的链上合约，有些使用require(msg.sender == tx.origin)来检验交易是否合法，在7702升级之后需要升级合约，因为存在7702的账户在和这种老合约交互的时候，tx.origin并不一定是真实用户的地址
 3. 链上数据浏览
+- [链上智能账户统计](https://www.bundlebear.com/eip7702-overview/all)
 - [okx的代理合约](https://etherscan.io/address/0x80296FF8D1ED46f8e3C7992664D13B833504c2Bb)
 ```solidity
 /**
@@ -178,14 +182,92 @@ async fn main() -> Result<()> {
 
 ### 2025.05.18
 7. demo方向  
-[**7702Defender**](https://www.hackquest.io/zh-cn/projects/ETH-Beijing-2025-7702Defender): 谷歌浏览器插件，自动识别交易风险  
-**链上跟单分成系统**：比如一个小虾米A账户订阅鲸鱼B账户，如果赚到钱了，那么通过代理合约自动分成，虾米70%，鲸鱼30%  
-**按周期/区块高度的订阅付费**：  
-**0gas账户**：钱包A有ETH作为gas，钱包B没有，钱包A发送EIP-7702交易，设置钱包B的授权合约。[测试代码](https://sepolia.etherscan.io/tx/0x18ac3032d0a11d9c5f7e9b4cde0b99ce68a0bae44442fbf955c059182ba5fe35#authorizationlist)
+- [**7702Defender**](https://www.hackquest.io/zh-cn/projects/ETH-Beijing-2025-7702Defender): 谷歌浏览器插件，自动识别交易风险  
+- **链上跟单分成系统**：比如一个小虾米A账户订阅鲸鱼B账户，如果赚到钱了，那么通过代理合约自动分成，虾米70%，鲸鱼30%  
+- **按周期/区块高度的订阅付费**：  
+- **0gas账户**：钱包A有ETH作为gas，钱包B没有，钱包A发送EIP-7702交易，设置钱包B的授权合约，前提是需要签名验证的rsv参数。[测试代码](https://sepolia.etherscan.io/tx/0x18ac3032d0a11d9c5f7e9b4cde0b99ce68a0bae44442fbf955c059182ba5fe35#authorizationlist)
+- **社交**：用户在链上发帖、点赞、打赏，平台或广告商替其付费
+- **交易返佣／补贴**：币安、OKX 等中心化平台可在链上做“免 gas 交易”
+- **DAO治理免gas投票**
+- **游戏**：先玩后付，免费铸造，活动期间免费mint
+- **gas token 二级市场**
+
 
 ### 2025.05.19
+8. [测试7702交易](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/wayhome.md#%E6%B5%8B%E8%AF%95-eip-7702-%E4%BA%A4%E6%98%93)  
+- 合约，批量处理逻辑
+```solidity
+/// @notice 代表批量调用中的单个调用。
+struct Call {
+    address to;
+    uint256 value;
+    bytes data;
+}
+
+/**
+     * @notice 直接执行一批调用。
+     * @dev 此函数旨在供智能账户本身（即 address(this)）调用合约时使用。它检查 msg.sender 是否为合约本身。
+     * @param calls 包含目标地址、ETH 值和 calldata 的 Call 结构体数组。
+     */
+function execute(Call[] calldata calls) external payable {
+    require(msg.sender == address(this), "Invalid authority");
+    _executeBatch(calls);
+}
 
 
+/**
+ * @notice 内部函数，用于执行批量调用。
+ * 合约使用一个随机数（nonce）来防止重放攻击。每次成功执行后，随机数（nonce）都会递增。如果没有实现随机数
+ *（nonce），攻击者可能会多次重放同一笔交易
+ */
+function _executeBatch(Call[] calldata calls) internal {
+    uint256 currentNonce = nonce;
+    nonce++;
+
+    for (uint256 i = 0; i < calls.length; i++) {
+        _executeCall(calls[i]);
+    }
+
+    emit BatchExecuted(currentNonce, calls);
+}
+
+
+    /**
+     * @dev 内部函数，用于执行单个调用。
+     * @param callItem 包含目标地址、价值和调用数据的 Call 结构体。
+     */
+function _executeCall(Call calldata callItem) internal {
+    (bool success,) = callItem.to.call{value: callItem.value}(callItem.data);
+    require(success, "Call reverted");
+    emit CallExecuted(msg.sender, callItem.to, callItem.value, callItem.data);
+}
+```
+- 签名验证
+```solidity
+bytes32 digest = keccak256(abi.encodePacked(nonce, encodedCalls));
+require(ECDSA.recover(digest, signature) == msg.sender, "Invalid signature");
+```
+- 执行 和 赞助方执行
+```solidity
+function execute(Call[] calldata calls) external payable {
+    // The caller executes the calls directly
+}
+function execute(Call[] calldata calls, bytes calldata signature) external payable {
+    // A sponsor executes the calls on behalf of the caller
+}
+```
+- 运行脚本
+```bash
+anvil --hardfork prague
+forge install && forge build
+forge script ./script/BatchCallAndSponsor.s.sol --tc BatchCallAndSponsorScript --broadcast --rpc-url 127.0.0.1:8545
+```
 ### 2025.05.20
+
+### 2025.05.21
+
+### 2025.05.22
+
+### 2025.05.23
 
 <!-- Content_END -->
