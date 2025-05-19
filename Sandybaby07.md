@@ -121,9 +121,13 @@ ChainID=0 means transformation is applicable to any chain
 but Nonce has to match,當設定Chain id =0時表示EOA在任何鏈都可以變成SCA,但是要注意在各個鏈上的nonce一樣要照順序,要注意
 
 ㆍContract_Wannabe=0 means transforming back to EOA
+
 即便變成SCA還是能做原本的EOA的流程
+
 安全程度與原本的EOA是相通的,仍然好好保管私鑰
+
 Storage不會被清空,更換合約時要注意,即便變回EOA也是一樣
+
 沒有初始化的動作,沒有搶跑問題,,在變成合約錢包之前要檢查EOA signature
 
 
