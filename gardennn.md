@@ -275,4 +275,27 @@ EIP-7702 的核心在於讓 EOA 在不部署合約的前提下，藉由設定特
 
 > EIP-7702 的 delegation contract 並非萬用 proxy，應精確對應特定交易型態或邏輯，實作時宜採 whitelist、限權、風控多層交叉驗證，並以低複雜度、高可審計為原則。
 
+### 2025.05.19
+
+### EIP-7702 × ERC-4337：整合實作與應用策略
+
+EIP-7702 提供 L1 原生帳戶抽象功能，不依賴 EntryPoint，設計更輕量且與現有交易邏輯相容；而 ERC-4337 則透過 Bundler 與 EntryPoint 提供 L2 抽象化錢包架構。兩者可互補整合，形成混合型帳戶抽象框架。
+
+#### 結合方式與應用邏輯
+
+- **Delegation contract 可實作 `validateUserOp()` 與 `execute()`**，與 ERC-4337 的 EntryPoint 完整對接，實現兼容型帳戶抽象。
+- **於 4337 wallet 中引入 delegation pattern**，可支援 fallback recovery、session key、限權交易等彈性機制。
+- **EIP-7702 提供 fallback 機制**：若主驗簽失效，可改由 delegation contract 實作 `isValidSignature()` 驗證邏輯。
+- **支援二階段授權架構**：簽名與執行行為可由不同 signer 操作，實現授權與使用責任分離。
+- **UserOperation 可增設 `delegationProof` 欄位**，提供基於 EIP-7702 授權的額外驗證來源與風控依據。
+- **混合模式可依需求分流**：批次處理交由 ERC-4337 處理，細緻操作則由 EIP-7702 進行個別授權。
+
+#### 優勢總結
+
+- **組合彈性高**：EIP-7702 可提供 L1 安全且可控的邏輯授權，ERC-4337 提供策略封裝與批次處理功能。
+- **安全設計更進階**：fallback 機制讓帳戶擁有多層次驗簽途徑與備援邏輯。
+- **未來可建構 Layered Account Abstraction 架構**：4337 為策略與排程層，7702 提供底層 delegation 邏輯與執行控制。
+
+> EIP-7702 與 ERC-4337 並非對立，而是互補：前者強化 L1 執行安全性與簡潔性，後者擴展錢包行為與批次能力。未來帳戶抽象標準中，EIP-7702 有潛力成為 recovery、fallback、限權 session 的關鍵元件。
+
 <!-- Content_END -->
