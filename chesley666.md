@@ -181,6 +181,11 @@ async fn main() -> Result<()> {
 [**7702Defender**](https://www.hackquest.io/zh-cn/projects/ETH-Beijing-2025-7702Defender): 谷歌浏览器插件，自动识别交易风险  
 **链上跟单分成系统**：比如一个小虾米A账户订阅鲸鱼B账户，如果赚到钱了，那么通过代理合约自动分成，虾米70%，鲸鱼30%  
 **按周期/区块高度的订阅付费**：  
-**0gas账户**：  
+**0gas账户**：钱包A有ETH作为gas，钱包B没有，钱包A发送EIP-7702交易，设置钱包B的授权合约。[测试代码](https://sepolia.etherscan.io/tx/0x18ac3032d0a11d9c5f7e9b4cde0b99ce68a0bae44442fbf955c059182ba5fe35#authorizationlist)
+
+### 2025.05.19
+
+
+### 2025.05.20
 
 <!-- Content_END -->
