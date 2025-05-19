@@ -261,7 +261,8 @@ authorization_list：EIP-7702 的核心字段，包含多个授权条目（autho
      - chain_id：授权有效的链（0 表示跨链重用）。    
      - address：委托的智能合约地址（delegation address）。  
      - nonce：授权的计数器，防止重放攻击。  
-     - y_parity, r, s：授权签名的 ECDSA 参数，验证授权合法性。  
+     - y_parity, r, s：授权签名的 ECDSA 参数，验证授权合法性。
+
 signature_y_parity, signature_r, signature_s：EOA 的 ECDSA 签名，验证交易合法性。  
 
 
