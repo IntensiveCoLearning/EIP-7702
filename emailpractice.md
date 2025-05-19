@@ -206,6 +206,33 @@ PER_EMPTY_ACCOUNT_COST × 授權條目數量（約 12500 Gas / 條）
 3. external call 過去: msgsender 也還是原本的 EOA
 
 社交恢復或是批量交易等等的都不是 7702主要的功能，這些之前就有了。 7702提供的就只是 "讓錢包變成可以有更直接使用這些功能的途徑"
+
+### 2025.05.19
+安全相關的問題
+
+與 EIP-3074 類似處理方式：AUTH + AUTHCALL，但更簡潔直接。
+
+Bytecode Behavior 深潛
+7702 的核心設計是在交易執行過程中注入 code，即：
+
+- pre-tx: EOA has no code
+- during-tx:
+  - code is injected at `msg.sender`
+  - calldata is executed (like a contract call)
+- post-tx: code is self-destructed or removed, back to EOA
+在實際操作上，client 會在交易開始前將 tx.origin 設為某段 bytecode，像是：
+
+具體 bytecode 是 signer 設定的，可以是靜態 template，也可以是 per-tx injected。這代表任意合約邏輯可以透過 EOA address 暫時存在，但不會永久佔用 code slot。
+
+和 EIP-4337 的實際差異
+項目	EIP-4337	EIP-7702
+EntryPoint	必須使用 centralized EntryPoint	無需 EntryPoint，直接在 EVM 層發生
+Address 使用方式	Contract Wallet（如 SimpleAccount）	傳統 EOA（如 MetaMask address）
+模組化	高度模組化（paymaster, bundler）	自由注入邏輯，但模組化需手動實作
+安全性風險	由 EntryPoint 審查、bundler 驗證	code 注入過程極度自由，風險更高
+
+EIP-7702 的 code injection 沒有“容錯框架”，安全研究者必須假設 attacker 有完全自由的 execution context。
+
 ### 2025.07.12
 
 <!-- Content_END -->
