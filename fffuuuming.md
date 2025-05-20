@@ -612,4 +612,67 @@ Interface for delegated EOA to enable better redelegation  and storage managemen
 
 next: EIP-7779 detail, private key management, eip-4337
 
+### 2025-05-20
+#### [EIP-7851: Deactivate/Reactivate a Delegated EOA's Key](https://eips.ethereum.org/EIPS/eip-7851)
+This EIP introduces new precompiled contract to allow delegated EOA to deactivate/reactivate their private keys, by **appending the ```0x00```byte at the end of the delegated code**
+- Active state: ```0xef0100 || address```
+- Deactivated state: ```0xef0100 || address || 0x00```. The private key is deactivated and cannot sign transactions or EIP-7702 delegation authorizations..
+---
+**Validation check**:
+- What: whether a private key is deactivated (identified by a code prefix ```0xef0100``` and a code length of ```24```)
+- When:
+    | Stage | What’s Happening? |
+    | ----- | ----------------- |
+    |     Transaction Pool   |            When a node receives a new transaction       |
+    | Block Inclusion/Execution  | Miner/validator perform transaction validity checks before execution           |
+---
+**Additional Tx Validation Overhead**
+Due to EIP-3607 and EIP-7702, nodes already load the account code during transaction validation to verify whether the sender is an EOA (empty code or code with prefix ```0xef0100```),
+
+---
+**Backwards Compatibility**
+Protocol, Dapp, contract... should
+- Always check prefix ```0xef0100``` to detect EIP-7702-style delegated EOAs.
+- When parsing delegated address:
+    - Use strict offset-based slicing: skip first 3 bytes, read next 20 bytes.
+	- Ignore extra bytes after (like the 0x00 deactivation flag).
+- Avoid over-restrictive checks like ```require(code.length == 23);```
+
+For example:
+```solidity!
+require(code.length >= 23);         // ✅ safe
+require(code[0..3] == 0xef0100);    // ✅ check prefix
+delegatedAddress = code[3..23];    // ✅ read proper offset
+```
+---
+
+**Security Considerations: Signatures Outside of Transactions**
+
+Contracts that have already been deployed and use ECDSA ```secp256k1``` signatures outside of transaction signatures (e.g., ```ERC-20``` tokens that support ```permit()``` in [ERC-2612](https://eips.ethereum.org/EIPS/eip-2612)) will not be able to verify the deactivated status of the EOA -> **signatures already signed by private keys will remain valid in these functions**.
+- **For Upgradable contract**: Manually add check to use ```EXTCODESIZE``` and ```EXTCODECOPY``` to verify that whether code start with ```0xef0100``` and has ```0x00``` in the end;
+- **For non-upgradeable contracts**: Modify the ```ecRecover``` precompile
+- **Contracts with own signature verification logic without relying on ```ecRecover```**: oops
+
+---
+#### [ERC-4337: Account Abstraction Using Alt Mempool](https://eips.ethereum.org/EIPS/eip-4337)
+![截圖 2025-05-20 晚上11.23.25](https://hackmd.io/_uploads/SyCORfq-gg.png)
+---
+**Reference**:
+- [A deep dive into the main components of ERC-4337: Account Abstraction Using Alt Mempool — Part 1](https://medium.com/oak-security/a-deep-dive-into-the-main-components-of-erc-4337-account-abstraction-using-alt-mempool-part-1-3a1ed1bd3a9b)
+#### TODO Learning:
+- re-delegation related eip
+- Gas fee model: [EIP-1559](https://eips.ethereum.org/EIPS/eip-1559)
+- [EIP-2929](https://eips.ethereum.org/EIPS/eip-2929), [EIP-2930](https://eips.ethereum.org/EIPS/eip-2930)
+- Shard Blob Transaction: [EIP-4844](https://eips.ethereum.org/EIPS/eip-4844)
+- Storaged banned instruction: [EIP-7562](https://eips.ethereum.org/EIPS/eip-7562)
+- [Use case EXP-0001](https://ithaca.xyz/updates/exp-0001)
+- Private key management: [EIP-7851](https://eips.ethereum.org/EIPS/eip-7851)
+- Domain separator: [EIP-712](https://eips.ethereum.org/EIPS/eip-712)
+- Wallet call API: [EIP-5792](https://eips.ethereum.org/EIPS/eip-5792)
+- EIP-4337
+- Native AA: [EIP-7701](https://eips.ethereum.org/EIPS/eip-7701)
+- Permit Extension for EIP-20 Signed Approvals : [ERC-2612](https://eips.ethereum.org/EIPS/eip-2612)
+
+next: deep dive into erc-4337
+
 <!-- Content_END -->
