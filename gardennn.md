@@ -298,4 +298,72 @@ EIP-7702 提供 L1 原生帳戶抽象功能，不依賴 EntryPoint，設計更�
 
 > EIP-7702 與 ERC-4337 並非對立，而是互補：前者強化 L1 執行安全性與簡潔性，後者擴展錢包行為與批次能力。未來帳戶抽象標準中，EIP-7702 有潛力成為 recovery、fallback、限權 session 的關鍵元件。
 
+### 2025.05.20
+
+### EIP-7702：交易建構與 Viem 實作
+
+#### Viem 實作交易流程
+
+透過 Viem 發送 EIP-7702 類型（Type 4）的 smart account 交易，流程如下：
+
+1. 使用 `signAuthorization()` 對某個 delegation contract 產生簽章。
+2. 建立交易時，將 `to` 設為 **EOA 自己的地址**。
+3. `data` 為呼叫 implementation contract（即代理邏輯合約）的 `execute(calls)` 方法。
+4. 帶入 `authorizationList`，確保授權生效。
+5. 可由自己或 sponsor 代為送出交易（sponsored execution）。
+
+---
+
+#### Viem TypeScript 實作程式碼
+
+```ts
+import { createWalletClient, http, parseEther } from 'viem';
+import { anvil } from 'viem/chains';
+import { privateKeyToAccount } from 'viem/accounts';
+import { eip7702Actions } from 'viem/experimental';
+import { abi, contractAddress } from './contract'; // Assuming you have already deployed the contract and exported the ABI and contract address in a separate file
+
+const account = privateKeyToAccount('0x...'); // EOA 的私鑰產生帳戶
+
+const walletClient = createWalletClient({
+  account,
+  chain: anvil,
+  transport: http(),
+}).extend(eip7702Actions()); // 加入 EIP-7702 擴充功能
+
+// Step 1: 產生對 implementation contract 的簽章授權
+const authorization = await walletClient.signAuthorization({
+  contractAddress,
+});
+
+// Step 2~4: 組裝與送出交易
+const hash = await walletClient.sendTransaction({
+  to: walletClient.account.address, // 設為 smart account 本身地址
+  authorizationList: [authorization],
+  data: encodeFunctionData({
+    abi,
+    functionName: 'execute',
+    args: [
+      [
+        {
+          to: '0xcb98643b8786950F0461f3B0edf99D88F274574D',
+          value: parseEther('0.001'),
+          data: '0x',
+        },
+        {
+          to: '0xd2135CfB216b74109775236E36d4b433F1DF507B',
+          value: parseEther('0.002'),
+          data: '0x',
+        },
+      ],
+    ],
+  }),
+});
+```
+
+---
+
+#### Flow of EIP-7702 Transaction
+![image](https://github.com/user-attachments/assets/5cf8e323-3ccb-475a-887e-1866b7866c1e)
+
 <!-- Content_END -->
