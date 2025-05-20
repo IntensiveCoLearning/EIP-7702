@@ -52,6 +52,9 @@ Day 5 笔记：https://www.notion.so/Day-5-1f7f5920d54c80c3b566f9817dcc1972?pvs=
 
 Day 6 笔记：https://www.notion.so/Day-6-Set-Code-Gas-1f8f5920d54c8022a639ce72f1b86faa?pvs=4
 
+### 2025.05.20
+记录了EIP-7702 相关技术思考
 
+Day 7 笔记：https://www.notion.so/Day-7-EIP-7702-1f9f5920d54c8099bfb4c22a30959b4d?pvs=4
 
 <!-- Content_END -->
