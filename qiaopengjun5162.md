@@ -60,6 +60,58 @@ EIP-7702 交易必须包含至少一条授权条目，否则因空授权列表�
 
 ### 2025.05.18
 
+<https://github.com/ethereum/go-ethereum/blob/701df4baad3bbdb0bdf4c837f19d25cb07ffc3af/core/state_transition.go#L611>
+
+```go
+// Otherwise install delegation to auth.Address.
+st.state.SetCode(authority, types.AddressToDelegation(auth.Address))
+
+```
+
+<https://github.com/ethereum/go-ethereum/blob/701df4baad3bbdb0bdf4c837f19d25cb07ffc3af/core/types/tx_setcode.go#L34>
+
+<https://github.com/ethereum/go-ethereum/blob/701df4baad3bbdb0bdf4c837f19d25cb07ffc3af/core/types/tx_setcode.go#L45>
+
+```go
+// DelegationPrefix is used by code to denote the account is delegating to
+// another account.
+var DelegationPrefix = []byte{0xef, 0x01, 0x00}
+
+// AddressToDelegation adds the delegation prefix to the specified address.
+func AddressToDelegation(addr common.Address) []byte {
+ return append(DelegationPrefix, addr.Bytes()...)
+}
+```
+
+### 2025.05.19
+
+Best Practices
+
+- PrivateKey Management 私钥保护
+- Multi-chain replay  chainId 0  相同的合约地址代码是否一定相同
+- No initcode  初始化权限检查 避免抢跑
+- Storage Management  插槽  ERC-7201   ERC-7779 验证 插槽
+- False Top-up  假充值  检查状态
+- Account Conversion  打破 msg.sender ==   tx.origin 安全检查
+- Compatibility  兼容性  ERC-721 ERC-777
+- Phishing 钓鱼风险
+
+Remember: Not your keys, not your coins.
+
+### 2025.05.20
+
+如果某个授权条目在执行过程中因无效签名或逻辑失败等原因出错，该条目会被 EVM 跳过，而不会导致整个交易失败，EVM 会继续处理授权列表中的下一个条目。这种机制增强了交易的容错性和灵活性，适用于批量授权或账户抽象化场景，但开发者需注意 Gas 消耗和潜在的安全问题。若在测试 EIP-7702 交易时遇到 HTTP 502 错误，可能是 RPC 节点问题，建议切换提供商或检查节点状态。
+
+### 2025.05.21
+
+笔记内容
+
+### 2025.05.22
+
+笔记内容
+
+### 2025.05.23
+
 笔记内容
 
 <!-- Content_END -->

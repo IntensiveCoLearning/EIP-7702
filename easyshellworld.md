@@ -214,6 +214,149 @@ async fn main() -> Result<()> {
 * **Argent & Argent X SDKs**：钱包库，内置 EIP-4337 账号抽象，支持社交恢复、每日限额、Gas 赞助及模块化安全功能。
 
 
+### 2025.05.18
+* **`authorizationList` 是什么**  
+  * EIP‑7702 新增交易类型（类型号 `0x04`）的特有字段，用于承载离线签名的授权信息。  
+  * 该列表至少包含一个元组，每个元组代表一次授权；若列表为空或元组格式不符合规范，整个交易将被视为无效。  
+
+* **字段详解**  
+  * **`chain_id`**  
+    * 指定签名时使用的链 ID，用于防止重放攻击。  
+    * 在执行交易时，节点会校验元组中的 `chain_id` 与交易对象中的 `chainId` 字段是否一致。  
+
+  * **`address`**  
+    * 代表希望注入并执行的合约部署地址，也称为“Delegate 合约”地址。  
+    * 该地址必须对应一个已部署的合约，并且节点会在执行前将此地址写入 EOA 的代码槽中。  
+
+  * **`nonce`**  
+    * 用于标识该授权的顺序，防止同一授权被重复使用。  
+    * 与普通交易的 `nonce` 类似，但独立于 EOA 的交易 `nonce`，专门用于授权管理。  
+
+  * **签名部分：`y_parity`、`r`、`s`**  
+    * 三者共同构成 ECDSA 签名的分离格式：  
+      * `r`, `s`：签名的两大数值部分。  
+      * `y_parity`：恢复签名时的恢复位（v 的奇偶性），用于精确还原签名者地址。  
+    * 通过 `ecrecover` 恢复出签名者地址，确保只有合法 EOA 所有者的授权才会生效。  
+
+* **验证流程**  
+  * **格式校验**：节点检查 `authorizationList` 非空，且每个元组包含恰好 6 个元素。  
+  * **边界检查**：元组中数值字段（如 `chain_id`, `nonce`, `y_parity`, `r`, `s`）需在 EIP‑7702 规定的范围内。  
+  * **签名验证**：节点使用 `ecrecover` 对 `(chain_id, address, nonce)` 进行哈希运算并验证签名，恢复出的地址必须与交易目标 EOA 一致。  
+  * **代码注入**：验证通过后，节点将按照 `0xef01 00 || address` 的格式，将合约地址写入 EOA 的代码槽中，使其在后续操作中表现如同合约账户。  
+  * **执行与恢复**：交易执行完成后，节点恢复 EOA 原始代码槽（通常为空），保证账户状态不发生永久改变。  
+
+* **错误情况与边界**  
+  * **空列表**：`authorizationList` 长度为零时，交易直接失效。  
+  * **签名不匹配**：若 `ecrecover` 恢复的地址与目标 EOA 不符，视为无效授权。  
+  * **格式不符**：元组元素数量非 6 或字段类型错误均会导致交易失败。  
+
+* **实践建议**  
+  * **使用可靠库**：优先采用成熟工具（如 ethers.js v6+ 的 `signAuthorization`、`prepareTransaction`）来构建和管理 `authorizationList`，以避免编码错误。  
+  * **严格审计**：仅对已审计的 Delegate 合约地址进行授权，防范恶意或漏洞合约注入风险。  
+  * **权限管理**：对于多重签名场景，合理设置 `nonce` 和签名顺序，防止重放攻击或授权滥用。  
+
+```
+import { JsonRpcProvider } from "ethers";
+
+const provider = new JsonRpcProvider("https://sepolia.infura.io/v3/YOUR_KEY");
+const relayer = new Wallet(RELAYER_KEY, provider);
+
+// 查询 nonce
+const txCount = await provider.getTransactionCount(signer.address);  // 用户 EOA 的 nonce :contentReference[oaicite:4]{index=4}
+
+// 构造 tx
+const tx = {
+  type: 0x04,
+  chainId: chainId,
+  nonce: txCount,
+  maxPriorityFeePerGas: utils.parseUnits("2", "gwei"),
+  maxFeePerGas: utils.parseUnits("50", "gwei"),
+  gasLimit: 200000,
+  to: signer.address,          // 通常目标设为自身，EIP‑7702 处理后会执行委托
+  value: 0,
+  data: "0x",                  // 可留空或携带调用 payload
+  accessList: [],              // EIP‑2930 访问列表，可选
+  authorizationList: [
+    [chainId, delegateAddr, authNonce, yParity, r, s]
+  ],                            // 我们生成的授权列表
+};
+
+// 通过第三方 Relayer（付 gas）发送
+const receipt = await relayer.sendTransaction(tx);
+console.log("交易哈希:", receipt.hash);
+```
+### 2025.05.19
+* **摘要**：Viem 对 EIP‑7702 提供了原生支持，包括在文档与 API 中专门的扩展，使您能够生成并管理授权元组 `(chain_id, contract_address, nonce, y_parity, r, s)`，无需手动构造，即可在链上调用中使用授权列表。
+
+* **EIP‑7702 扩展位置**：
+
+  * 在官方文档的 “EIP‑7702” 专栏（版本 2.29.4）中详细介绍了该提案及其在 Viem 中的实现。
+  * EIP‑7702 本身定义了一种新的以太坊交易类型（`0x04`），允许 EOA 将执行权限委托给智能合约，实现批量操作、燃气赞助以及权限委派。
+
+* **核心动作（Actions）**：
+
+  * **prepareAuthorization**：准备授权数据的哈希输入。
+  * **signAuthorization**：签名授权并返回已封装的授权元组，直接可用于 `authorizationList`。
+
+* **辅助工具（Utilities）**：
+
+  * **hashAuthorization**：对授权数据进行哈希计算。
+  * **recoverAuthorizationAddress**：从授权签名中恢复签名者地址。
+  * **verifyAuthorization**：验证授权签名的合法性。
+
+* **集成指南**：
+
+  * **合约调用示例**：展示如何将 `authorizationList` 传递给客户端的 `execute`（或等效）方法，以在 EIP‑7702 上下文中调用合约函数。
+  * **交易发送示例**：
+
+    ```ts
+    import { encodeFunctionData } from 'viem'
+    import { privateKeyToAccount } from 'viem/accounts'
+    import { walletClient } from './config'
+    import { abi, contractAddress } from './contract'
+
+    const eoa = privateKeyToAccount('0x...')
+    const authorization = await walletClient.signAuthorization({
+      account: eoa,
+      contractAddress,
+    })
+    const hash = await walletClient.sendTransaction({
+      to: eoa.address,
+      data: encodeFunctionData({ abi, functionName: 'initialize' }),
+      authorizationList: [authorization],
+    })
+    ```
+
+    提交一个 EIP‑7702 交易，使 EOA 委托合约执行初始化逻辑。
+
+* **批量与赞助示例**：
+
+  * 准备多个授权以实现原子化多步流程（如 ERC‑20 批准与转账），并可由中继者代付燃气：
+
+    ```ts
+    const auth1 = await client.signAuthorization({ contractAddress: A })
+    const auth2 = await client.signAuthorization({ contractAddress: B })
+    const txHash = await client.execute({
+      address: eoa.address,
+      batches: [ /* ... */ ],
+      authorizationList: [auth1, auth2],
+    })
+    ```
+
+    可将多个操作捆绑为一个事务，同时保持私钥离线。
+
+* **生态系统集成**：
+
+  * **Wagmi**：已将 Viem 的 EIP‑7702 支持上游合并，提供 React Hooks。
+  * **Foundry & QuickNode**：示例代码展示如何在本地分叉及主网中通过 Viem 客户端测试 EIP‑7702。
+
+  ### 2025.05.20
+  ![测试中](./images//none/1.PNG)
+
+
+
+
+
 
 
 

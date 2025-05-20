@@ -205,4 +205,164 @@ EIP-7702 的核心在於讓 EOA 在不部署合約的前提下，藉由設定特
 
 此兩種模式皆允許 EOA 在無需預先部署智能合約的前提下，實現一次性或動態委派自訂邏輯，並配合 L1 交易機制執行，為帳戶抽象提供更原生且彈性的架構。
 
+### 2025.05.17
+
+### EIP-7702：安全性考量
+
+#### 常見風險與防範建議
+
+- **避免使用 `tx.origin` 作為重入保護（Reentrancy Guard）**：
+  EIP-7702 改變了 `msg.sender == tx.origin` 的判斷方式，建議使用 transient 儲存或標準鎖機制取代 `tx.origin`。
+
+- **避免使用原子初始化（atomic init）**：
+  原子化 `init()` 呼叫可能遭到前置攻擊（frontrunning），建議使用 `initWithSig` 搭配簽章驗證初始化邏輯。
+
+- **初始化應透過 EntryPoint 呼叫以提升安全性**：
+  若採用 4337-compatible 的架構，初始化邏輯應限制由 EntryPoint 呼叫以避免未授權配置。
+
+- **避免 storage layout 衝突（Storage Collisions）**：
+  切換 delegation contract 時應確保使用 ERC-7201 命名空間等機制，避免不同合約之間發生存儲欄位覆蓋。
+
+- **避免委派至具動態行為的合約（如 upgradeable 或 selfdestruct）**：
+  僅應委派至透過 `CREATE2` 部署、不可變的邏輯合約，防止釣魚與意外邏輯改變。
+
+- **最小化信任基礎與攻擊面（Trusted Surface）**：
+  Delegation contract 應保持邏輯簡單、功能封閉、可審計，避免動態 dispatch 或不必要的外部呼叫。
+
+- **選用已審計與可信任的標準合約模組**：
+  優先採用來自 Ambire、Alchemy、MetaMask 或 EF 等已知團隊維護並審計過的模組化合約設計。
+
+### 2025.05.18
+
+### EIP-7702：Delegation 合約的設計原則
+
+#### 一、設計核心與部署原則
+
+- 委派合約應透過 **CREATE2 部署**，保證 deterministic address，可預先驗證與靜態指向。
+- 合約邏輯應明確不可變，**避免使用 upgradeable patterns 或具毀損性的 selfdestruct**。
+- 每個 delegation contract 應對應特定業務目的，避免萬用 dispatch 結構。
+
+#### 二、簽章驗證與使用者授權綁定
+
+- 每筆簽章應與交易中實際使用的 **msg.sender、calldata、gas、value、nonce（或 salt）一致**。
+- EIP-7702 的簽章驗證格式為：`ecrecover(keccak256(0x05 || rlp([chain_id, address, nonce])), y_parity, r, s)`
+- 為提升互通性與安全性，推薦使用 **EIP-712 標準格式** 建立簽章內容。
+
+#### 三、多使用者支援設計
+
+- 若允許多帳戶共用 delegation contract，應設計適當資料結構以管理權限，例如：
+  ```solidity
+  mapping(address => Permission) public permissions;
+  ```
+- 可擴充設計如：
+  - 每個 signer 可被限制僅能呼叫特定函式 selector
+  - 支援每日限額、可互動的 target contract 白名單等
+
+#### 四、meta 資訊與風控擴充欄位
+
+- 建議加入簽章參數：
+  - `purpose`：明確表示簽章用途（如 mint、transfer）
+  - `chainId`：防止跨鏈重放攻擊
+  - `deadline`：簽章過期時間
+- 可考慮加上 session ID、防重放 hash、或交易 domain 作為額外驗證。
+
+#### 五、安全與審計建議
+
+- 每筆簽章只能用一次，nonce 應與帳戶當前 nonce 精準匹配，避免重複授權。
+- delegation 合約實作應通過靜態分析工具（如 Slither）與形式驗證（如 MythX）。
+- 請避免動態 dispatch 結構與過多 call、delegatecall，減少潛在攻擊面。
+- 設計應符合最小信任原則與模組化（如 OpenZeppelin AccessControl）。
+
+> EIP-7702 的 delegation contract 並非萬用 proxy，應精確對應特定交易型態或邏輯，實作時宜採 whitelist、限權、風控多層交叉驗證，並以低複雜度、高可審計為原則。
+
+### 2025.05.19
+
+### EIP-7702 × ERC-4337：整合實作與應用策略
+
+EIP-7702 提供 L1 原生帳戶抽象功能，不依賴 EntryPoint，設計更輕量且與現有交易邏輯相容；而 ERC-4337 則透過 Bundler 與 EntryPoint 提供 L2 抽象化錢包架構。兩者可互補整合，形成混合型帳戶抽象框架。
+
+#### 結合方式與應用邏輯
+
+- **Delegation contract 可實作 `validateUserOp()` 與 `execute()`**，與 ERC-4337 的 EntryPoint 完整對接，實現兼容型帳戶抽象。
+- **於 4337 wallet 中引入 delegation pattern**，可支援 fallback recovery、session key、限權交易等彈性機制。
+- **EIP-7702 提供 fallback 機制**：若主驗簽失效，可改由 delegation contract 實作 `isValidSignature()` 驗證邏輯。
+- **支援二階段授權架構**：簽名與執行行為可由不同 signer 操作，實現授權與使用責任分離。
+- **UserOperation 可增設 `delegationProof` 欄位**，提供基於 EIP-7702 授權的額外驗證來源與風控依據。
+- **混合模式可依需求分流**：批次處理交由 ERC-4337 處理，細緻操作則由 EIP-7702 進行個別授權。
+
+#### 優勢總結
+
+- **組合彈性高**：EIP-7702 可提供 L1 安全且可控的邏輯授權，ERC-4337 提供策略封裝與批次處理功能。
+- **安全設計更進階**：fallback 機制讓帳戶擁有多層次驗簽途徑與備援邏輯。
+- **未來可建構 Layered Account Abstraction 架構**：4337 為策略與排程層，7702 提供底層 delegation 邏輯與執行控制。
+
+> EIP-7702 與 ERC-4337 並非對立，而是互補：前者強化 L1 執行安全性與簡潔性，後者擴展錢包行為與批次能力。未來帳戶抽象標準中，EIP-7702 有潛力成為 recovery、fallback、限權 session 的關鍵元件。
+
+### 2025.05.20
+
+### EIP-7702：交易建構與 Viem 實作
+
+#### Viem 實作交易流程
+
+透過 Viem 發送 EIP-7702 類型（Type 4）的 smart account 交易，流程如下：
+
+1. 使用 `signAuthorization()` 對某個 delegation contract 產生簽章。
+2. 建立交易時，將 `to` 設為 **EOA 自己的地址**。
+3. `data` 為呼叫 implementation contract（即代理邏輯合約）的 `execute(calls)` 方法。
+4. 帶入 `authorizationList`，確保授權生效。
+5. 可由自己或 sponsor 代為送出交易（sponsored execution）。
+
+---
+
+#### Viem TypeScript 實作程式碼
+
+```ts
+import { createWalletClient, http, parseEther } from 'viem';
+import { anvil } from 'viem/chains';
+import { privateKeyToAccount } from 'viem/accounts';
+import { eip7702Actions } from 'viem/experimental';
+import { abi, contractAddress } from './contract'; // Assuming you have already deployed the contract and exported the ABI and contract address in a separate file
+
+const account = privateKeyToAccount('0x...'); // EOA 的私鑰產生帳戶
+
+const walletClient = createWalletClient({
+  account,
+  chain: anvil,
+  transport: http(),
+}).extend(eip7702Actions()); // 加入 EIP-7702 擴充功能
+
+// Step 1: 產生對 implementation contract 的簽章授權
+const authorization = await walletClient.signAuthorization({
+  contractAddress,
+});
+
+// Step 2~4: 組裝與送出交易
+const hash = await walletClient.sendTransaction({
+  to: walletClient.account.address, // 設為 smart account 本身地址
+  authorizationList: [authorization],
+  data: encodeFunctionData({
+    abi,
+    functionName: 'execute',
+    args: [
+      [
+        {
+          to: '0xcb98643b8786950F0461f3B0edf99D88F274574D',
+          value: parseEther('0.001'),
+          data: '0x',
+        },
+        {
+          to: '0xd2135CfB216b74109775236E36d4b433F1DF507B',
+          value: parseEther('0.002'),
+          data: '0x',
+        },
+      ],
+    ],
+  }),
+});
+```
+
+
+#### Flow of EIP-7702 Transaction
+![image](https://github.com/user-attachments/assets/5cf8e323-3ccb-475a-887e-1866b7866c1e)
+
 <!-- Content_END -->

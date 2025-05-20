@@ -210,4 +210,148 @@ timezone: UTC+8
 > -   目前社區有提案 [EIP-7851](https://eips.ethereum.org/EIPS/eip-7851) 希望能夠允許禁用/啟用私鑰對於委託狀態下 EOA 的控制權
 > -   不過提案目前還尚未通過，目前建議的做法是用戶授權完 EOA 變成 delegate contract 後，就直接棄用私鑰不在任何地方保存備份，以降低私鑰外洩的可能性。
 
+### 2025.05.18
+
+本日學習內容：
+
+-   [EIP 7702 提案](https://eips.ethereum.org/EIPS/eip-7702)
+
+> 引進 EIP-7702 之後，將打破以下三個不變性：
+>
+> -   **帳戶餘額只會在該帳戶主動發出的交易中減少**: 在 EIP-7702 之前，帳戶的餘額只有在該帳戶自己發起交易時才會減少。但在 EIP-7702 後改變了這一點，一旦帳戶被委託（delegated），其他人呼叫該帳戶時也可能導致它的餘額減少。
+> -   **EOA 的 nonce 不會在交易執行過程中增加**: 在 EIP-7702 之前，EOA 的 nonce 僅會在交易開始前確認並增加，不會在執行過程中變化。但 EIP-7702 後改變了這一點，一旦帳戶被委託（delegated），它在執行交易時可以呼叫 CREATE 指令來部署新合約，這會使帳戶的 nonce 在執行過程中增加。
+> -   **`tx.origin == msg.sender` 僅在最外層呼叫中成立**: 在 EIP-7702 之前，`tx.origin == msg.sender` 只會在最外層的交易呼叫中為真。在 EIP-7702 後改變了這一點，委託後的 EOA 可以在單一交易中發出多次內部呼叫，使 `msg.sender` 在不同執行上下文中變化，導致 tx.origin == msg.sender 不再只在頂層成立。
+
+### 2025.05.19
+
+本日學習內容：
+
+-   使用 Foundry 在本地實測 EIP-7702 功能
+
+> # 使用 Foundry 在本地測試 EIP-7702
+>
+> 使用 `anvil` 節點在本地啟用測試環境，並且開啟 Odyssey 功能：
+>
+> ```bash
+> anvil --odyssey
+> ```
+>
+> 選定一個測試用的 EOA 及其對應的私鑰加入環境變數：
+>
+> ```bash
+> export DEPLOYER_PK=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 export DEPLOYER_ADDRESS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+> ```
+>
+> 用 `DEPLOYER` 部署一個 `DelegateContract` 合約：
+>
+> ```bash
+> forge create DelegateContract --private-key $DEPLOYER_PK --broadcast
+> ```
+>
+> ![image](images/alex/image2.png)
+>
+> ![image](images/alex/image3.png)
+>
+> 以下為 `DelegateContract` 合約：
+>
+> ```solidity
+> // SPDX-License-Identifier: MIT
+> pragma solidity ^0.8.20;
+>
+> /**
+> * @notice VULNERABLE, UNAUDITED CODE. DO NOT USE IN PRODUCTION.
+> * @author The Red Guild (@theredguild)
+> */
+> contract DelegateContract {
+>    struct Call {
+>        bytes data;
+>        address to;
+>        uint256 value;
+>    }
+>
+>    error ExternalCallFailed();
+>
+>    function execute(Call[] memory calls) external payable { // lack of access control
+>        for (uint256 i = 0; i < calls.length; i++) {
+>            Call memory call = calls[i];
+>
+>            (bool success,) = call.to.call{value: call.value}(call.data);
+>            require(success, ExternalCallFailed());
+>        }
+>    }
+>
+>    // no receive function nor payable fallback function
+> }
+> ```
+>
+> > [!WARNING]  
+> > 注意 `DelegateContract` 合約僅供學習用，請勿在 production 環境使用。
+>
+> 將部署好的 `DelegateContract` 合約地址加入環境變數：
+>
+> ```bash
+> export DELEGATE=0x5FbDB2315678afecb367f032d93F642f64180aa3
+> ```
+>
+> 選定另一個測試用的 EOA 及其對應的私鑰加入環境變數，這個測試用的 EOA 我們取名叫 Alice：
+>
+> ```bash
+> export ALICE_PK=0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d export ALICE_ADDRESS=0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+> ```
+>
+> 我們待會要將 Alice EOA 授權委託變成 `DelegateContract` 合約，在此之前可以先檢查 Alice EOA 是否有包含 bytecode：
+>
+> ```bash
+> cast code $ALICE_ADDRESS
+> //output: 0x
+> ```
+>
+> 接著用 Alice EOA 的私鑰（鏈下）簽署 EIP-7702 授權：
+>
+> ```bash
+> cast wallet sign-auth $DELEGATE --private-key $ALICE_PK
+>
+> //output: 0xf85c827a69945fbdb2315678afecb367f032d93f642f64180aa38080a00a17b68dcbf7db8bafb45cbcbeb61316aa330f045e43425e1db41e6c794c2e64a01a7f46131075975b44ae67f3bc968a9bce64f257b24571d945bb9026812c114e
+> ```
+>
+> 接著將 EIP-7702 授權結果帶上鏈：
+>
+> ```bash
+> export SIGNED_AUTH=$(cast wallet sign-auth $DELEGATE --private-key $ALICE_PK)
+> cast send $(cast az) --private-key $ALICE_PK --auth $SIGNED_AUTH
+> ```
+>
+> ![image](images/alex/image4.png)
+>
+> > [!WARNING]  
+> > 理論上 Alice EOA 的 nonce 應該要變成 2，但是查看後只有 1，不確定是不是 Bug。
+> > 將 EIP-7702 授權帶上鏈後，我們可以觀察到 Alice EOA 中含的 Bytecode 已經不一樣了：
+>
+> ```bash
+> cast code $ALICE_ADDRESS
+> //output: 0xef01005fbdb2315678afecb367f032d93f642f64180aa3
+> ```
+>
+> 檢查 Alice EOA 地址下的 bytecode 長度，可看出 Alice EOA 的 bytecode 長度已經不為 0。
+>
+> ```bash
+> cast codesize $ALICE_ADDRESS
+> // 23
+> ```
+>
+> 如果要取消授權變回普通的 EOA，只需將授權的委託地址指定為 0 地址：
+>
+> ```bash
+> cast send $(cast az) --private-key $ALICE_PK --auth $(cast wallet sign-auth $(cast az) --private-key $ALICE_PK)
+> ```
+>
+> 查看取消 EIP-7702 授權後的結果：
+>
+> ```bash
+>  cast codesize $ALICE_ADDRESS
+> //output: 0
+> cast code $ALICE_ADDRESS
+> //output: 0x
+> ```
+
 <!-- Content_END -->

@@ -97,5 +97,76 @@ authorization_list=[[chain_id,address,nonce,y_parity,r,s],…]
 3. 昨天的第一个问题，如果其它账户调用智能EOA账户成功（有权限），修改的也是智能EOA账户自己的状态
 
 ### 2025.5.18
+今天又找了一些EIP-7702的资料，对升级有了更深刻的理解：
+1. 关于批量执行操作，[这篇文章](https://learnblockchain.cn/article/11498)给出了一个自己实现批量上链逻辑：
+```
+struct Call {
+    address to;
+    uint256 value;
+    bytes data;
+}
+
+function execute(Call[] calldata calls) external payable {
+    //交易发送者为智能EOA账户，自己发起的多个操作打包，不需要签名验证
+    require(msg.sender == address(this), "Invalid authority");
+    _executeBatch(calls);
+}
+
+function _executeBatch(Call[] calldata calls) internal {
+    uint256 currentNonce = nonce;
+    nonce++;
+
+    for (uint256 i = 0; i < calls.length; i++) {
+        _executeCall(calls[i]);
+    }
+
+    emit BatchExecuted(currentNonce, calls);
+}
+
+function _executeCall(Call calldata callItem) internal {
+    (bool success,) = callItem.to.call{value: callItem.value}(callItem.data);
+    require(success, "Call reverted");
+    emit CallExecuted(msg.sender, callItem.to, callItem.value, callItem.data);
+}
+```
+2. Gas赞助，类似于ERC-4337中的实现：用户签名`UserOperation`发送给Bundler统一打包上链：
+```
+//直接上链
+function execute(Call[] calldata calls) external payable {
+    // 调用者直接执行调用
+}
+//赞助者在验证签名是由 EOA 签署后，代表调用者执行调用。
+function execute(Call[] calldata calls, bytes calldata signature) external payable {
+    byte32 encodedCalls = abi.encodePacked(calls);
+    bytes32 digest = keccak256(abi.encodePacked(nonce, encodedCalls));
+    //这里还原签名地址后可能与白名单进行比较，不一定是msg.sender
+    require(ECDSA.recover(digest, signature) == msg.sender, "Invalid signature");
+    // 赞助者代表调用者执行调用
+}
+```
+
+### 2025.5.19
+
+#### EIP-7702 带来的影响与机会
+EIP-7702 是一项重大改变，对区块链行业中的各个参与方都带来了重大影响，也提供了许多新的机会。
+
+**合约钱包服务商**
+
+从提案本身的标题和实现机制中可以看出，EIP-7702 本身并不专门提供有关账户抽象（Account Abstraction, AA）的上层能力（如 gas 抽象，nonce 抽象, 签名抽象等），只是提供了将 EOA 转化成 Proxy 合约 的基础能力。因此该提案并不与现行的各类合约钱包基础设施（如 Safe, ERC-4337 等）相冲突。相反，EIP-7702 与现有的合约钱包可以几乎无缝融合。允许用户的 EOA 转变成 Safe 钱包，ERC-4337 钱包。从而集成合约提供的多签、gas 代付、批量交易、passkey 签名等等功能。合约钱包提供商如果能快速、顺滑地集成 EIP-7702，可以有效扩展用户群体，提升用户体验。
+
+**DApp 开发者**
+由于 EIP-7702 对 AA 钱包的用户体验上有所提升，DApp 开发者可以考虑更大范围的接入 AA 钱包，为用户与 DApp 交互提供更便捷安全的体验。如利用合约钱包的批量交易能力一次性完成多个 DeFi 操作。
+
+另一方向 DApp 也可以考虑根据项目特性为用户定制开发 Delegation 合约，为用户提供专有的复杂合约交互功能。
+
+**资产托管方**
+对于交易所、资金托管方，通常需要管理大批量的地址作为其用户的充币地址，并定期进行资金归集。传统的资金归集模式中使用 EOA 地址作为充币地址，进行归集时需要向充币地址充值一定金额的 gas，并由充币地址向出金地址进行转账交易。整个资金过程涉及大量的交易发送，流程很长且需要支付高额的 gas 费用。历史上也出现过机构进行资金归集导致链上交易费用攀升，交易拥堵的情况。
+
+EIP-7702 的出现可以将 EOA 地址无缝转化成合约钱包，由于 EIP-7702 的 gas 代付机制，不再需要 gas 充值交易的存在。同时可以利用合约钱包的可编程性，将多笔归集转账打包在单笔交易中，减少交易数量并节约 gas 消耗。最终提高归集效率，降低归集成本。
+
+### 2025.5.20
+今天查EIP-7702关于与ERC4337融合的资料，找到如下内容，明天仔细研究下：
+- [eip7702.io](https://eip7702.io/examples) 有关于用智能EOA生成 `UserOperation`的示例
+- [ZeroDev](https://docs.zerodev.app/) 提供了关于智能EOA与智能合约账户（ERC-4337）的工具包
 
 <!-- Content_END -->
