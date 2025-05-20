@@ -354,4 +354,16 @@ timezone: UTC+8
 > //output: 0x
 > ```
 
+### 2025.05.20
+
+本日學習內容：
+
+-   針對昨天測試 EIP-7702 時發現的問題找原因
+
+> 背景：昨天在測試 EIP-7702 授權時，如果是 Alice 自己授權且帶上鏈的情況下，Alice 的 nonce 值應該是要增加 2，但使用 foundry 測試時只有增加 1。
+>
+> 這邊經過幾次嘗試後，確定 nonce 值的計算有問題，所以我在 Foundry 的 repo 中，提了一個 issue，等待回覆後再來更新。
+>
+> issue: https://github.com/foundry-rs/foundry/issues/10573
+
 <!-- Content_END -->
