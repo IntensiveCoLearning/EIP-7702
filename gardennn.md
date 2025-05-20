@@ -361,7 +361,6 @@ const hash = await walletClient.sendTransaction({
 });
 ```
 
----
 
 #### Flow of EIP-7702 Transaction
 ![image](https://github.com/user-attachments/assets/5cf8e323-3ccb-475a-887e-1866b7866c1e)
