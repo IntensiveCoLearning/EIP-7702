@@ -130,5 +130,13 @@ Storage不會被清空,更換合約時要注意,即便變回EOA也是一樣
 
 沒有初始化的動作,沒有搶跑問題,,在變成合約錢包之前要檢查EOA signature
 
+### 2025.05.20
+msg.sender 的安全假設檢查在7702的架構下假設交易發起 tx.origin為EOA不再可行
+
+msg.sender==tx.origin 來判斷重入攻擊也會失效,開發者必須假設所有的參與者有可能是合約
+
+需要注意是否實作ERC721或ERC777等token 需要的hook functions ,確保user可以與主流的協議兼容
+
+
 
 <!-- Content_END -->
