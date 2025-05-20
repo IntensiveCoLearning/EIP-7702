@@ -167,7 +167,7 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 | [easyshellworld](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/easyshellworld.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |   | | | |
 | [alichaw](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/alichaw.md) | ✅ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ |   | | | |
 | [ygy-1231](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/ygy-1231.md) | ⭕️ | ⭕️ | ❌ | | | | | | | |
-| [luleigreat](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/luleigreat.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |   | | | |
+| [luleigreat](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/luleigreat.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | | | |
 | [blahole](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/blahole.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ |   | | | |
 | [wodeche](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/wodeche.md) | ⭕️ | ⭕️ | ❌ | | | | | | | |
 | [helloworldsmart](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/helloworldsmart.md) | ✅ | ⭕️ | ⭕️ | ❌ | | | | | | |
@@ -177,6 +177,7 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 | [zion](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/zion.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ |   | | | |
 | [kris77z](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/kris77z.md) | ⭕️ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ |   | | | |
 <!-- END_COMMIT_TABLE -->
+
 
 
 
