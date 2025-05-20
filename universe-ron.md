@@ -535,4 +535,142 @@ EIP-7702 很強，沒錯。
 
 用 7702 的人，責任更重。  
 也因此，我今天這篇不是教你怎麼用，而是教你怎麼 **不被用**。
+
+### 2024.05.20
+一次性的智慧帳號外掛
+```text
+Transaction 格式（新增欄位）：
+
+[
+  chain_id,
+  nonce,
+  max_priority_fee_per_gas,
+  max_fee_per_gas,
+  gas_limit,
+  destination,
+  data,
+  access_list,
+  [[contract_code, y_parity, r, s], ...], // 新增
+  signature_y_parity,
+  signature_r,
+  signature_s
+]
+```
+
+## 願景與挑戰並存
+
+### 使用者角度（User）
+
+這種「一次性升級」大大簡化 Smart Wallet 的採用。  
+但也引入一個大問題：
+
+>  一旦你簽錯一段惡意 `contract_code`，駭客可以在一筆交易裡洗光你整個錢包！
+
+這代表錢包軟體很可能會限制使用者隨意簽署 7702 交易。  
+可能會像這樣：
+
+- 「開啟 Pro 模式」
+- 「允許某些網站傳送 7702 tx」
+- 或完全禁用 7702 簽名
+
+---
+
+### DApp 開發者角度（Dapps）
+
+Dapps 想送 7702 交易會被錢包審查 `contract_code` 是否在白名單內。  
+
+預期未來會有新的 RPC 標準（像 [ERC-5792](https://eips.ethereum.org/EIPS/eip-5792)）來讓 Dapps 傳送批次交易，至於是否使用 7702 由錢包自行決定。
+
+如果 Dapps 想自行定義 gas sponsor / paymaster 邏輯，未來可能會需要像 [ERC-7677](https://eips.ethereum.org/EIPS/eip-7677) 這樣的新標準搭配實作。
+
+---
+
+### 錢包角度（Wallet Providers）
+
+錢包的第一職責是保護使用者，面對 7702，他們可能會：
+
+- 限制 Dapps 發起 7702 請求  
+- 採用白名單的 `contract_code`（由錢包方提供）  
+- 嚴格模擬/分析 code 行為後再顯示給使用者  
+- 只提供給高級用戶開啟
+
+---
+
+## 技術設計延伸討論（by Vitalik）
+
+Vitalik 提出一些值得社群深入討論的技術方向：
+
+1. **`contract_code` 要不要換成合約地址？**  
+   - 優點：可重複使用現有合約  
+   - 缺點：可能造成重用攻擊風險（reuse attack）
+
+2. **要不要連同 `chainId`、`nonce` 一起簽名？**  
+   - 增加安全性（防重放攻擊）與可撤銷性  
+   - 缺點是使用者每次都要重新簽署（影響 UX）
+
+3. **是否禁止 `SSTORE`？**  
+   - 有助於避免儲存衝突（storage collision）  
+   - 但也讓 contract_code 的靈活性受限
+
+4. **是否允許 code 保留？（類似 [EIP-5003](https://eips.ethereum.org/EIPS/eip-5003)）**  
+   - 使用者可以選擇是否永久保留合約邏輯
+
+5. **是否允許 `initCode`？**  
+   - 讓 constructor code 可以先執行，提供初始化邏輯  
+   - 但也增加操作複雜性與潛在攻擊面
+
+---
+
+## Zyfi 的角色與展望
+
+Zyfi 是 zkSync 上的 gas abstraction 領導者，擁有：
+
+- 75 萬筆交易  
+- 11 萬用戶  
+- $57K 美金的代付價值  
+
+EIP-7702 為 Zyfi 帶來更廣泛的應用空間，例如：
+
+- 跨鏈代付（Omnichain Paymaster）  
+- EOA 層級的免 gas 操作  
+- Dapp 自定義代付邏輯（batching / approval flows）
+
+---
+
+## 未來發展與問答精選（FAQ）
+
+### 發佈時程？
+預計將於 Pectra 硬分叉（2024 Q4～2025 Q1）合併進主網。
+
+---
+
+### 會取代 ERC-4337 嗎？
+不會，而是互補。  
+- ERC-4337 提供模組化生態（bundler, paymaster）  
+- EIP-7702 提供低門檻、立即性的帳戶功能擴充  
+
+---
+
+### 有什麼風險？
+
+- 簽錯 `contract_code`，整個錢包可能會在一筆交易中被清空  
+- 若簽名未包含 `nonce` 或 `chainId`，將無法防範重放攻擊
+
+---
+
+### 如何避免？
+
+- 錢包層進行 gatekeeping，限制 Dapp 自由發起 7702 交易  
+- Dapp 僅使用白名單內的 `contract_code`  
+- 加入 `nonce + chainId` 驗證以防重放攻擊  
+
+---
+
+### 2024.05.21
+
+### 2024.05.22
+
+### 2024.05.23
+
+### 2024.05.24
 <!-- Content_END -->
