@@ -60,8 +60,41 @@ Key Points
 Note Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day04.md
 
 ### 2025.05.18
+#### EIP-7702 Modular Architecture with PREP
+Key Points
+1. What is PREP (Programmable Runtime EOA Proxy)  
+2. Stateless delegation and modular logic  
+3. Why modular Smart Accounts matter  
+
+Note Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day05.md
+
+### 2025.05.19
+#### Persistent Delegation and Multi-chain Use
+Key Points
+1. Moving from single-use to persistent delegation  
+2. Cross-chain authorization with `chainId = 0`  
+3. Smart Account evolution: 4337, 7702, and beyond 
+
+Note Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day06.md
+
+### 2025.05.20
+#### Future of EIP-7702 and Modular Account Ecosystem
+Key Points
+1. How EIP-7702 fits into ERC-6900 modular AA
+2. Delegation as plug-in logic
+3. ZyFi’s vision: infra-light, user-first abstraction
+
+Notre Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day07.md
+
+### 2025.05.21
 
 
+
+### 2025.05.22
+
+
+
+### 2025.05.23
 
 
 

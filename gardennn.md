@@ -361,8 +361,53 @@ const hash = await walletClient.sendTransaction({
 });
 ```
 
-
 #### Flow of EIP-7702 Transaction
 ![image](https://github.com/user-attachments/assets/5cf8e323-3ccb-475a-887e-1866b7866c1e)
+
+### 2025.05.21
+
+🔗 範例來源：https://github.com/quiknode-labs/qn-guide-examples/blob/main/ethereum/eip-7702/src/BatchCallAndSponsor.sol
+
+### EIP-7702：範例 Delegation 合約 `BatchCallAndSponsor.sol` 重點筆記
+
+#### 合約目的
+- 作為 EOA 的委派邏輯合約（delegation contract）。
+- 支援 batch 呼叫與 sponsor 執行邏輯，符合 EIP-7702 的臨時升級設計。
+
+#### 簽章邏輯
+- 使用 `keccak256(nonce, calls)` 作為簽名內容，搭配 ECDSA 驗證。
+- 透過 `ECDSA.recover(...) == address(this)` 驗證該筆操作確實來自該 smart account。
+- 使用 `MessageHashUtils.toEthSignedMessageHash(...)` 將 digest 包裝為標準 Ethereum 簽章格式。
+
+#### 執行方式
+- `function execute(Call[] calldata calls)`：僅允許 smart account 自身呼叫。
+- `function execute(Call[] calldata calls, bytes calldata signature)`：由 sponsor 呼叫，需附帶離線簽章。
+
+#### 結構定義
+```solidity
+struct Call {
+    address to;
+    uint256 value;
+    bytes data;
+}
+```
+- 用於批次執行多筆交易，每筆交易可帶金額與 calldata。
+
+#### Replay Protection
+- 使用 `public nonce` 作為每筆交易的防重放機制。
+- 簽章時與執行時皆需驗證 nonce 是否一致，成功執行後自動遞增。
+
+#### 邏輯拆分
+- `_executeBatch()`：處理批次內所有呼叫，包含 nonce 增加與 emit event。
+- `_executeCall()`：單筆 call 的具體執行行為。
+
+#### 事件記錄
+- `event CallExecuted(...)`：單筆 call 執行。
+- `event BatchExecuted(...)`：整批 call 執行。
+
+#### 補充
+- 合約可收 ETH（實作 `fallback()` 與 `receive()`）。
+- 本範例合約為「單帳戶專用」，如需多人共用應加入 mapping 權限管理。
+- 該合約設計簡潔明確，為理解 EIP-7702 delegation 機制的重要範例，實作可直接用於 Foundry 測試與 Viem integration。
 
 <!-- Content_END -->

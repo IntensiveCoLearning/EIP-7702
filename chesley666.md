@@ -263,6 +263,37 @@ forge install && forge build
 forge script ./script/BatchCallAndSponsor.s.sol --tc BatchCallAndSponsorScript --broadcast --rpc-url 127.0.0.1:8545
 ```
 ### 2025.05.20
+9. 代付gas场景测试(源自群友)
+```solidity
+import { privateKeyToAccount } from 'viem/accounts'
+import { createWalletClient, http } from 'viem'
+import { sepolia } from 'viem/chains'
+
+const walletA = createWalletClient({
+  account: privateKeyToAccount('0x...'), // 有ETH的钱包
+  chain: sepolia,
+  transport: http(),
+})
+
+const walletB = privateKeyToAccount('0x...') // 无ETH的钱包
+const delegatedContract = '0x80296F...2Bb'   // 共享的授权合约
+
+// Step 1: A 为 B 签署授权绑定 delegatedContract
+const authorization = await walletA.signAuthorization({
+  account: walletB,
+  contractAddress: delegatedContract,
+})
+
+// Step 2: A 发起交易，帮 B 完成代码设置 + 初始化调用
+const hash = await walletA.sendTransaction({
+  authorizationList: [authorization],
+  data: '0x8129fc1c', // initialize() 函数选择器
+  to: walletB.address,
+})
+
+```
+b钱包没有eth，a代发7702交易并设定b的合约逻辑；合约中msg.sender是b而不是a；  
+这使得 tx.origin == msg.sender 不再能判断eoa发起人，因为7702的msg.sender是b，而不是现实世界的交易发起者a
 
 ### 2025.05.21
 

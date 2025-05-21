@@ -354,4 +354,38 @@ timezone: UTC+8
 > //output: 0x
 > ```
 
+### 2025.05.20
+
+本日學習內容：
+
+-   針對昨天測試 EIP-7702 時發現的問題找原因
+
+> 背景：昨天在測試 EIP-7702 授權時，如果是 Alice 自己授權且帶上鏈的情況下，Alice 的 nonce 值應該是要增加 2，但使用 foundry 測試時只有增加 1。
+>
+> 這邊經過幾次嘗試後，確定 nonce 值的計算有問題，所以我在 Foundry 的 repo 中，提了一個 issue，等待回覆後再來更新。
+>
+> issue: https://github.com/foundry-rs/foundry/issues/10573
+
+### 2025.05.21
+
+本日學習內容：
+
+-   解決昨天提的 Issue
+
+> 為什麼使用以下方式進行 EIP-7702 授權時，Alice 的 EOA nonce 只增加 1，而不是增加 2？
+>
+> ```bash
+> export SIGNED_AUTH=$(cast wallet sign-auth $DELEGATE --private-key $ALICE_PK)
+> cast send $(cast az) --private-key $ALICE_PK --auth $SIGNED_AUTH
+> ```
+>
+> 因為 `cast wallet sign-auth` 是一個獨立的指令，它並不知道你接下來會如何使用這個簽名（例如：是否由同一個帳號發送交易，或交由其他帳號）。因此，它預設會使用該帳號當下的 nonce 作為簽名資料的一部分。
+> 但若想讓 Alice 自我授權（即自己授權自己），其實不需要先手動簽名，而是可以直接這樣寫：
+>
+> ```bash
+> cast send $(cast az) --auth $DELEGATE --private-key $ALICE_PK
+> ```
+>
+> 這樣做時，`cast send` 會自動處理 nonce 的邏輯：它會將授權中使用的 nonce 設為 Alice 當前帳號 nonce + 1（因為當前的 nonce 會用來發送這筆交易）。如此一來，上鏈時就會同時遞增兩次 nonce，一次用於發送交易，一次用於授權簽名，達成自我授權時 nonce 增加 2 的正確行為。
+
 <!-- Content_END -->

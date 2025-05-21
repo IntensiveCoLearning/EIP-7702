@@ -169,4 +169,26 @@ EIP-7702 的出现可以将 EOA 地址无缝转化成合约钱包，由于 EIP-7
 - [eip7702.io](https://eip7702.io/examples) 有关于用智能EOA生成 `UserOperation`的示例
 - [ZeroDev](https://docs.zerodev.app/) 提供了关于智能EOA与智能合约账户（ERC-4337）的工具包
 
+## 2025.5.21
+今天看了下ZeroDev的文档，笔记如下：
+ZeroDev 通过以下方式改进 Web3 UX：
+- 密钥抽象
+    - 通过passkey或社交账户登录
+    - 如果用户丢失登录信息，可通过passkey等方式恢复帐户
+- Gas抽象
+    - 为用户赞助Gas
+    - 支持用户用ERC20代币支付gas
+- 交易抽象
+    - 批量发送交易
+    - 通过session key 自动发交易（对AI Agent友好）
+- 链抽象
+    - 不需要跨链即可在任意链上花费代币
+    - 与任何交易所都有出入口，甚至在 L2 上
+
+ZeroDev 是 AA 中最值得信赖的解决方案，为 100 多个团队在 30 多个网络上的 400 多万个智能账户提供支持。
+
+试了一下通过passkey生成账户，并由ZeroDev官方代付Gas的示例：https://passkey-demo.zerodev.app/， 记录如下：
+- passkey 生成账户需要手机的解锁密码
+- 每次给passkey账户签名，都需要输入电脑的解锁密码
+
 <!-- Content_END -->

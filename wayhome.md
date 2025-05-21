@@ -23,6 +23,46 @@ t.me/wayhome
 
 <!-- Content_START -->
 
+### 2025.05.21
+
+## 账户抽象 (Account Abstraction)
+
+核心概念是解耦用户身份与交易执行，传统账户模型用户必须持有私钥才能发起交易，而账户抽象后用户可通过多种方式验证身份并发起交易，从而实现更灵活安全易用的交易方式。
+
+## Fatlane
+一个支持 ERC-4337 的基础设施，提供 bundling 服务。通过聚合多个用户操作，提高交易效率并降低成本。
+
+## MEV
+MEV（Maximal Extractable Value）指的是从去中心化系统中可以提取的最大价值。这包括从交易排序和插入中获得的套利、三明治攻击和抢尾交易等利润，以及Gas 费用本身。MEV 在很大程度上是用户“意图”实现“最优执行”的对立面，可以看作是用户意图执行的一种偏差或税收.
+
+在账户抽象和 ERC-4337 的框架下，MEV 成为了一个重要的考量因素。ERC-4337 通过引入一个替代内存池（Alt Mempool）实现了无需协议层修改的账户抽象。用户通过 UserOperation 对象来表达他们的交易意图。
+这些 UserOperation 会被**捆绑者（Bundlers，这里指 ERC-4337 标准中的 Bundler，区别于传统 MEV 供应链中的 Bundler/搜索者）**收集并提交到以太坊网络，通常通过 EntryPoint 合约。
+
+ERC-4337 的替代内存池设计旨在最大限度地提高许可性（permissionlessness）去中心化（decentralization），这对交易的活跃度和抗审查性很有利。
+多个潜在的捆绑者会检测到 UserOperation。捆绑者是理性的参与者，他们会竞争处理这些 UserOperation，并根据能从中提取的价值来决定向验证者支付多少费用
+
+## ERC-4337 Frontrunning 
+
+为什么会发生 ERC-4337 Frontrunning？
+
+1.UserOperations 的结构包含支付信息：UserOperation 结构（在版本 0.6 中）包含 maxFeePerGas 和 maxPriorityFeePerGas 等字段，用于指示中继操作需要支付的金额。
+2.UserOperations 可能过度支付：为了确保交易在链上拥堵时不会停滞，UserOperations 通常会支付相对较高的 Gas 费用。例如，一个捆绑者可能支付了 0.0048 POL 的 Gas 费用，但从 UserOperation 中获得了 0.0091 POL 的返还，几乎是支付金额的两倍。
+3.存在套利空间：UserOperation 中存在的过度支付创造了利润机会。当捆绑者支付的 Gas 费用低于 UserOperation 中的返还金额时，这种差额就成为了可提取的价值。
+
+## ERC-4337 Frontrunning 的工作原理
+其基本策略是找到那些以低于返还金额的成本进行中继的 UserOperations。然后，搜索者（在 MEV 领域被称为 searcher，不同于 ERC-4337 标准中的 Bundler）会以略高的 Gas 价格中继同一个 UserOperation。
+如果搜索者的交易先于原始捆绑者的交易执行，搜索者将获得 UserOperation 的返还金额，从而赚取成本与返还之间的差价。如果后执行，交易将回滚，导致损失。
+实现这一策略需要监控链上发送的 4337 Bundle，并能够查看待处理的交易。
+
+## Frontrunning 机器人的挑战
+
+1. 监控内存池：需要低延迟地获取待处理的 4337 交易流。作者最初利用 BlockNative Explorer 泄露的 API 密钥，后尝试 Bitquery 和 Alchemy 的 WebSocket 流但延迟较高。最终通过运行自己的节点（基于 reth）解决了低延迟问题。
+2. 快速高效地发送交易：为了提高交易在同一区块中被包含的概率，需要尽快将 Frontrun 交易广播到尽可能多的 RPC。Merkle 的交易注入端点被认为是有效的秘密武器。
+3. 管理 Nonce：交易 Nonce 需要连续且单调递增。快速发送多个交易可能导致网络未及时传播前一个 Nonce 的交易，导致后续交易被延迟或拒绝。作者通过轮换使用多个地址来增加单个地址的交易间隔，并使用 0 ETH 的自我转账交易来“解堵”被 Gas Price 急剧上涨卡死的地址。
+4. 激烈的竞争：存在其他 Searcher 也在进行 ERC-4337 Frontrunning，导致激烈的竞价战。竞争对手可能拥有更优越的网络覆盖和快速反应能力。
+   作者描述了与一个拥有出色执行能力的 Searcher B 的竞价过程。当作者提高 Gas Price 竞标时，Searcher B 能够迅速以更高价格替换交易或通过取消交易后重新发送来出价更高。
+5. 对手的适应性：当作者尝试通过代理合约或改变函数选择器来隐藏自己的活动时，Searcher B 很快就适应了这些变化，表明他们可能正在深度分析所有交易的调用轨迹或监控作者的地址。作者最终承认在竞争中落败
+
 ### 2025.05.20
 
 ## ERC-4337 核心组件

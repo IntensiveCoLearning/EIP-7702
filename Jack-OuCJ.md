@@ -57,4 +57,9 @@ Day 6 笔记：https://www.notion.so/Day-6-Set-Code-Gas-1f8f5920d54c8022a639ce72
 
 Day 7 笔记：https://www.notion.so/Day-7-EIP-7702-1f9f5920d54c8099bfb4c22a30959b4d?pvs=4
 
+### 2025.05.21
+
+记录了和账户抽象相关的协议，分析优缺点
+
+Day 8 笔记：https://www.notion.so/Day-8-7702-EIP-1faf5920d54c80eb8358d71e32e6327b?pvs=4
 <!-- Content_END -->
