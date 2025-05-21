@@ -659,6 +659,23 @@ Contracts that have already been deployed and use ECDSA ```secp256k1``` signatur
 ---
 **Reference**:
 - [A deep dive into the main components of ERC-4337: Account Abstraction Using Alt Mempool — Part 1](https://medium.com/oak-security/a-deep-dive-into-the-main-components-of-erc-4337-account-abstraction-using-alt-mempool-part-1-3a1ed1bd3a9b)
+
+### 2025-05-21
+#### [ERC-4337: Account Abstraction Using Alt Mempool](https://eips.ethereum.org/EIPS/eip-4337)
+---
+**Overview**:
+Users sign ```UserOperations``` via their smart contract wallet. -> ```UserOps``` go into an ```alt mempool``` watched by a **Bundler** -> Bundler packages multiple ```ops``` into one bundle transaction to the ```EntryPoint``` contract -> ```EntryPoint``` validates each ```UserOp``` (with optional ```Paymaster``` sponsorship or ```Aggregator``` signature schemes) and then calls the user’s Smart Account to execute the desired action, ensuring the Bundler is paid from the user’s or paymaster’s deposit.
+
+---
+**Bundler**
+![截圖 2025-05-21 晚上11.34.10](https://hackmd.io/_uploads/SyBtfOiWxx.png)
+1. **Receiving UserOps**: Validators who want to capture  ```UserOp``` fees must run a bundler or use a bundler service to intercept them 
+    - Some infrastructure companies, such as Alchemy and Stackup, provide "**bundlers as a service**" solutions so that dapp developers don't have to worry about this.
+    - Questions: Does Bundler & alt mempool has the problem like the traditional mempool like MVE, front-running and so on?
+
+**Reference**:
+- [A deep dive into the main components of ERC-4337: Account Abstraction Using Alt Mempool — Part 1](https://medium.com/oak-security/a-deep-dive-into-the-main-components-of-erc-4337-account-abstraction-using-alt-mempool-part-1-3a1ed1bd3a9b)
+
 #### TODO Learning:
 - re-delegation related eip
 - Gas fee model: [EIP-1559](https://eips.ethereum.org/EIPS/eip-1559)
