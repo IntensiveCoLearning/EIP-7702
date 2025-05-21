@@ -130,4 +130,9 @@ Smart Wallet Account 則是以 EOA 作為某個 Smart Contract Wallet 的 owner�
 - 透過 Nick's Method 以構造出來的 ECDSA 簽名發送 7702 authorization 的資料讓一個沒有私鑰的 EOA 升級成 7702 set account，然後初始化一組 key 做管理。這樣就能削減 EOA 權限過大的問題。
 - https://blog.biconomy.io/prep-deep-dive
 
+### 2025.05.21
+
+- 本文闡明了 4337 frontrun 相關的經驗
+- https://www.notion.so/ananthvivekanand/Adventures-in-ERC4337-frontrunning-1f0c5df4b3ed80278d83c9d7d87a3784
+
 <!-- Content_END -->
