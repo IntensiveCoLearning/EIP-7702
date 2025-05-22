@@ -185,9 +185,10 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 | [alexliao](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/alexliao.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |   | |
 | [chesley666](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/chesley666.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ |   | |
 | [kevinsslin](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/kevinsslin.md) | ⭕️ | ✅ | ⭕️ | ✅ | ✅ | ⭕️ | ⭕️ | ❌ | | |
-| [zion](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/zion.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |   | | |
+| [zion](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/zion.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ |   | |
 | [kris77z](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/kris77z.md) | ⭕️ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ | ⭕️ | ❌ | | |
 <!-- END_COMMIT_TABLE -->
+
 
 
 
