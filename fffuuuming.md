@@ -692,4 +692,33 @@ Users sign ```UserOperations``` via their smart contract wallet. -> ```UserOps``
 
 next: deep dive into erc-4337
 
+### 2025-05-22
+**UserOperation**: High level pseudo-transaction that package up users' intent
+- Normal transaction part:
+    ```tex
+    to, calldata, maxFeePerGas, maxPriorityFeePerGas, nonce, signature.
+    ```
+- Important additional fields:
+
+
+| Field    | Type     | Description |
+| -------- | -------- | -------- |
+|` sender` | `address`| SCA who makes & executes the `UserOp`        |
+|    `factory`      |    `address`      |  Account Factory for new Accounts / `0x7702` flag for EIP-7702 Accounts / `address(0) `       |
+|     `factoryData`     |     `bytes`     |  Data for `factory` / EIP-7702 initialization data / empty array        |
+| `callGasLimit`         | `uint256`         | For the main execution call      |
+| `verificationGasLimit`         | `uint256`         |  For validation |
+| `preVerificationGas`         | `uint256`         | Covering the bundler’s cost of processing the `UserOp` before execution, such as signature validation, calldata parsing         |
+| `paymaster`         | `address`         |Paymaster contract, empty if `sender` pays gas in person         |
+| `paymasterVerificationGasLimit`         | `uint256`         |Allocate for the paymaster validation code (e.g. checking if it agrees to sponsor the transaction)         |
+| `paymasterPostOpGasLimit`         |  `uint256`        |     For the paymaster post-operation code     |
+|  `paymasterData`        |   `bytes`       |   Data for paymaster       |
+|  `signature`        |  `bytes`        | Data passed into the `sender` to verify authorization         |
+---
+- `signature` field usage is defined by the SCA implementation.
+- `signature` MUST depend on `chainid` and `EntryPoint` to prevent **replay attacks**, either cross-chain or with multiple EntryPoint contract versions
+    - Does `UserOp` contains `chainid` ?
+- EIP-7702 `authorization_tuple` value can be provided alongside the `UserOp` struct, but `authorization_tuple` are not included in the `UserOp` itself.
+    - So does this tuple is processed and place the `delegated code` to EOA's `code` field just before any ERC-4337 action ? such as parsing, validating `UserOp`
+
 <!-- Content_END -->
