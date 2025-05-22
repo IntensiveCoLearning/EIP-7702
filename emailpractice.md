@@ -233,6 +233,23 @@ Address 使用方式	Contract Wallet（如 SimpleAccount）	傳統 EOA（如 Met
 
 EIP-7702 的 code injection 沒有“容錯框架”，安全研究者必須假設 attacker 有完全自由的 execution context。
 
+### 2025.05.20
+
+缺點 :
+Gas Costs: While EIP-7720 introduces efficient mechanisms for deferred transfers, executing multiple scheduled transfers may still incur significant gas costs, especially when dealing with a large number of recipients.
+
+
+Implementation Complexity: Developers need to ensure that the smart contracts handling deferred transfers are secure and free from vulnerabilities, as they manage future token distributions.
+
+
+### 2025.05.21
+
+Scheduled Withdrawals: Enables the scheduling of token transfers, facilitating use cases like vesting schedules, delayed payments, or time-locked rewards.
+
+### 2025.05.22
+  note簽名的內容跟簽名要在一起，一起去生成一組 v r s 
+  
+  note 如果沒有透明顯示簽名內容，使用者以為自己簽了5 token  但實際上簽了100 token
 ### 2025.07.12
 
 <!-- Content_END -->
