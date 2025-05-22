@@ -388,4 +388,109 @@ timezone: UTC+8
 >
 > 這樣做時，`cast send` 會自動處理 nonce 的邏輯：它會將授權中使用的 nonce 設為 Alice 當前帳號 nonce + 1（因為當前的 nonce 會用來發送這筆交易）。如此一來，上鏈時就會同時遞增兩次 nonce，一次用於發送交易，一次用於授權簽名，達成自我授權時 nonce 增加 2 的正確行為。
 
+### 2025.05.22
+
+本日學習內容：
+
+-   [PREP (Provably Rootless EIP-7702 Proxy) Method Deep Dive](https://blog.biconomy.io/prep-deep-dive/#goals)
+
+> # Nicks’ Method 是什麼？
+>
+> 這個方法由以太坊創辦人之一 Vitalik Buterin 想出來，並由 Nick Johnson 首次實作。
+> 它的核心是利用一個特性：
+>
+> > 在 EVM 中，一筆交易的「發送者地址」（`from`）可以被從交易本身的參數中恢復出來，透過一個叫 `ecrecover` 的函式。
+>
+> 也就是說，你不需要事先知道帳號的私鑰，只要你能構造出一筆交易，並填入一組看似有效的簽名（`r`, `s`, `v` 值），那你就可以找出一個與這簽名匹配的地址。
+>
+> ## 大致流程
+>
+> 1. 開發者準備好一筆交易（例如：發送 5 ETH 給某地址）。
+> 2. 不用私鑰來簽名這筆交易，而是隨機產生一組簽名參數：r, s, v。
+> 3. 用 ecrecover 函數，從這筆交易的內容 + 簽名，推導出一個帳號地址 A。
+> 4. 然後開發者只要將「5 ETH + 手續費」發送到這個地址 A（也就是那個虛構出來的帳號）。
+> 5. 最後，只要把這筆交易送出，EVM 會認為這筆交易是從地址 A 發出且簽名有效，所以它會被正常執行！
+>
+> 總結來說，Nicks’ Method 就像是一種 「逆向產生地址」 的方法：
+>
+> -   你先寫好交易，隨機造出一組簽名。
+> -   然後你問 EVM：「哪個地址的私鑰會產生這組簽名？」
+> -   再把錢給這個地址，讓它完成交易 —— 即便你從來不知道它的私鑰是什麼。
+>     這就是所謂的 Keyless Execution（無私鑰執行）。
+>
+> # PREP 方法概覽
+>
+> PREP（Provably Rootless EIP-7702 Proxy） 是一種創新的帳戶部署方法，結合了 EIP-7702 的授權機制、Nicks’ Method（無私鑰執行）以及特殊的加密簽名推導。
+> 這種方法允許開發者**在不擁有私鑰的情況下部署智能帳戶**，並確保沒有任何人能夠控制該帳戶的根私鑰。
+>
+> # PREP 方法實作步驟（結合 Nicks’ Method + EIP-7702）
+>
+> ## Step 1：產生 EIP-7702 授權訊息哈希
+>
+> 建立授權訊息的哈希，格式如下：
+>
+> ```javascript
+> const messageHash = keccak256(
+>     concat([
+>         MAGIC_PREFIX, // 固定的前綴 (0x05)
+>         rlp.encode([
+>             0, // chain_id = 0（代表在所有鏈上都有效）
+>             smart_account_address, // 智能帳戶地址（singleton 合約地址）
+>             0, // nonce = 0（新帳戶）
+>         ]),
+>     ])
+> );
+> ```
+>
+> ## Step 2：隨機產生 ECDSA 簽名 (r, s, v)
+>
+> 這裡不需要私鑰，使用隨機數生成有效的簽名值：
+>
+> ```javascript
+> const r = randomBytes(32); // 32 bytes 隨機值
+> const s = randomBytes(32); // 需確保 s < secp256k1n / 2（符合 EIP-2）
+> const v = randomChoice([27, 28]); // v 可為 27 或 28
+> ```
+>
+> # Step 3：利用簽名還原簽名者地址
+>
+> 從上述 messageHash 和 signature 中 recover 一個帳戶地址：
+>
+> ```javascript
+> const signature = concat([r, s, v]);
+> const recoveredAddress = recoverAddress(messageHash, signature);
+> ```
+>
+> 這個 recoveredAddress 即為最終要變成智能帳戶的帳戶地址，你並不知道它的私鑰。
+>
+> # Step 4：構造 EIP-7702 授權資料（Tuple）
+>
+> ```javascript
+> const authorization = {
+>     chain_id: 0,
+>     address: smart_account_address, // singleton 智能帳戶邏輯合約地址
+>     nonce: 0,
+>     y_parity: v,
+>     r: r,
+>     s: s,
+> };
+> ```
+>
+> # Step 5：上鏈提交 EIP-7702 交易
+>
+> 建構一筆交易，使用 type `0x04`（EIP-7702 類型），其 authorizations 陣列中包含上面構造的 authorization：
+>
+> -   這筆交易將 recoveredAddress 設為 smart_account_address 的代理。
+> -   帳戶成功轉化為智能帳戶！
+>
+> # Step 6: 初始化智能帳戶（可選，但常見）
+>
+> 部署後的智能帳戶需要初始化，依照你的設計邏輯可能包括：
+>
+> -   設定 owner（可為 EOA、Passkey、MPC、社交恢復等）
+> -   設定簽名邏輯與授權模式
+> -   綁定外部控制機制或策略模組
+>
+> 這步驟依賴你的帳戶合約邏輯，可以在上鏈交易中一次性完成（constructor/init call）。
+
 <!-- Content_END -->
