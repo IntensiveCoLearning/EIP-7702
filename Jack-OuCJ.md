@@ -62,4 +62,10 @@ Day 7 笔记：https://www.notion.so/Day-7-EIP-7702-1f9f5920d54c8099bfb4c22a3095
 记录了和账户抽象相关的协议，分析优缺点
 
 Day 8 笔记：https://www.notion.so/Day-8-7702-EIP-1faf5920d54c80eb8358d71e32e6327b?pvs=4
+
+### 2025.05.22
+记录了7702协议对 DEFI 的影响
+
+Day 9 笔记：https://www.notion.so/Day-9-7702-DEFI-1fbf5920d54c808e9ec0e92529dc5d6d?pvs=4
+
 <!-- Content_END -->
