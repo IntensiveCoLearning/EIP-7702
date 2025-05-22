@@ -70,11 +70,11 @@ Telegram：https://t.me/LXDAO/24572
 | -------------- | ------------------------------------------------------- | -------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | 🧩 账户抽象起点 | EIP-86: AA via TX abstraction (未采纳)                  | EIP 草案 | https://eips.ethereum.org/EIPS/eip-86                        | 最早提出 AA 概念，探索通过新交易结构使 EOA 可配置            |
 | 🧩 账户抽象现状 | EIP-4337: Account Abstraction without consensus changes | EIP 草案 | https://eips.ethereum.org/EIPS/eip-4337                      | 当前主流智能账户标准，无需协议层改动，Safe、Stackup 等项目实现了 |
-| 🧠 4337 解读    | Vitalik Blog: A guide to Account Abstraction            | 博客     | https://vitalik.ca/general/2021/01/11/account_abstraction.html | Vitalik 系统讲述 AA 背景与未来发展，深入浅出                 |
+| 🧠 4337 解读    | Vitalik Medium: ERC-4337: Account Abstraction without Ethereum protocol changes            | 博客     | [https://vitalik.ca/general/2021/01/11/account_abstraction.html](https://medium.com/infinitism/erc-4337-account-abstraction-without-ethereum-protocol-changes-d75c9d94dc4a) | Vitalik 详细介绍 ERC-4337 的设计理念和实现方式，强调无需对以太坊共识层进行更改即可实现账户抽象的可能性                 |
 | 🧠 实操开发     | Stackup ERC-4337 Dev Docs                               | 文档     | https://docs.stackup.sh/docs                                 | 最全面的 4337 实战文档，适合动手尝试                         |
 | ⚙️ 协议层方向   | EIP-2938: Native AA tx type (废弃)                      | EIP 草案 | https://eips.ethereum.org/EIPS/eip-2938                      | 提出引入原生 AA 交易类型，但未落地，可作为失败方案分析       |
 | ⚙️ 授权合约尝试 | EIP-3074: AUTH + AUTHCALL                               | EIP 草案 | https://eips.ethereum.org/EIPS/eip-3074                      | 一种以 opcode 为核心的 AA 探索，最终被 7702 替代             |
-| ⚠️ 对比视角     | Vitalik 推文：7702 为什么优于 3074                      | 推特     | https://x.com/VitalikButerin/status/1785314769487255787      | 从设计哲学角度解释为何放弃 3074，转向 7702                   |
+| ⚠️ 对比视角     | EIP-7702 与 EIP-3074 的比较分析                    | 博客     | [https://x.com/VitalikButerin/status/1785314769487255787](https://medium.com/buildbear/eip-3074-and-eip-7702-a-new-era-to-account-abstraction-80bf2c177cd9)      | 详细比较了两者的设计理念、实现方式以及各自的优缺点                   |
 
 
 
