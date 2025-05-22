@@ -149,5 +149,15 @@ Batch multiple transactions into single transaction
 - Applications
   * Request direct permission for their contract to interact with the user's account, or
   * Deploy their own smart account (called a "companion account") that interacts with the user's account
-- 
+
+### 2025.05.22
+*BEST PRACTICES*
+- Delegation contract should align with AA standards (ERC-4337 compatible)
+- Stay Permissionless: Don’t hardcode relayers; anyone should be able to relay & censorship resistance
+- Pick 4337 Bundlers: Use EntryPoint ≥ 0.8 for gas abstraction
+- dApp Integration: Utilize ERC-5792 or ERC-6900, no standardized method for dApps to request 7702 authorization signatures directly
+- Avoid Lock-In: Stick to open, interoperable standards like Alchemy’s Modular Account
+- Preserve Privacy: Support ERC-20 gas payments, session keys, public mempools to minimize data exposure
+- Use Proxies: Delegate to proxies for upgrades and modularity without requiring additional EIP-7702 authorizations for each change
+
 <!-- Content_END -->
