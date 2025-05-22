@@ -87,11 +87,26 @@ Key Points
 Notre Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day07.md
 
 ### 2025.05.21
+#### Real-world EIP-7702 Application: Ambire Wallet
+Key Points
+1. How Ambire integrates EIP-7702 into its wallet
+2. Gasless transactions and ERC-20 fee payment
+3. Temporary smart account logic with no address change
+4. Batch execution and transaction simulation
+5. Recovery and session key support for secure UX
 
+Note Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day08.md
 
 
 ### 2025.05.22
+#### Real-world EIP-7702: Privy and ZeroDev
+Key Points 
+1. Sign EIP-7702 authorizations with embedded wallets  
+2. Enable gasless transactions with Paymaster via ZeroDev  
+3. Configure custom wallet UI using PrivyProvider  
+4. Create temporary smart accounts (7702 kernel) via SDK
 
+Note Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day09.md
 
 
 ### 2025.05.23
