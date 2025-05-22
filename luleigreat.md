@@ -169,7 +169,7 @@ EIP-7702 的出现可以将 EOA 地址无缝转化成合约钱包，由于 EIP-7
 - [eip7702.io](https://eip7702.io/examples) 有关于用智能EOA生成 `UserOperation`的示例
 - [ZeroDev](https://docs.zerodev.app/) 提供了关于智能EOA与智能合约账户（ERC-4337）的工具包
 
-## 2025.5.21
+### 2025.5.21
 今天看了下ZeroDev的文档，笔记如下：
 ZeroDev 通过以下方式改进 Web3 UX：
 - 密钥抽象
@@ -190,5 +190,25 @@ ZeroDev 是 AA 中最值得信赖的解决方案，为 100 多个团队在 30 �
 试了一下通过passkey生成账户，并由ZeroDev官方代付Gas的示例：https://passkey-demo.zerodev.app/， 记录如下：
 - passkey 生成账户需要手机的解锁密码
 - 每次给passkey账户签名，都需要输入电脑的解锁密码
+
+### 2025.5.22
+#### ZeroDev
+1. 今天看了下ZeroDev的DashBoard，发现有些类似Alchamy或Infura，要做Gas赞助，是这样的：
+- 在DashBoard创建Project
+- 设置Gas赞助，会生成一个ChainID绑定的rpc地址
+2. 跑了下[7702的示例](https://github.com/zerodevapp/zerodev-examples/tree/main/7702)，没跑通，报错了，通过错误发现ZeroDev的rpc地址是一个自己提供的服务地址，服务封装了一些接口，如`pm_getPaymasterStubData`
+3. 决定先不去研究ZeroDev了，原因如下：
+- ZeroDev对账户抽象的实现比较复杂，封装比较深，一时没研究明白
+- Github上的star数量并不多
+- 这种类似于Alchamy的服务形式，注定后期要收费才能盈利
+
+#### 7702
+**应用场景**
+- 批量交易，如approve + swap，要比ERC4337的方案省很多Gas
+- Gas用ERC20代付，解决用户没有ETH的情况下也能交易的问题
+**安全风险**
+- chainid设置为0的情况下，别人可在其它链上通过重放交易来给账户设置代理
+- [目前已经出现欺诈场景](https://www.iyiou.com/briefing/202505201776633)，因为eoa最终签名的是个hash，通过钓鱼网站，可以做到签名内容与hash不一致，为用户设置一个欺诈代理，把资产转移
+
 
 <!-- Content_END -->
