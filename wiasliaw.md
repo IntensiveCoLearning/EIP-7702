@@ -135,4 +135,20 @@ Smart Wallet Account 則是以 EOA 作為某個 Smart Contract Wallet 的 owner�
 - 本文闡明了 4337 frontrun 相關的經驗
 - https://www.notion.so/ananthvivekanand/Adventures-in-ERC4337-frontrunning-1f0c5df4b3ed80278d83c9d7d87a3784
 
+### 2025.05.22
+
+#### 和 3074 的比較
+
+- 3074 引入兩個新的 opcode，`AUTH` opcode 可以讓 Alice's EOA 授權給 Invoker Contract，使其可以以 `AUTHCALL` 以 Alice's EOA 做為 sender 和其他合約互動
+- 3074 並不會讓 EOA 的 code region 固定，而是以簽名讓 EOA 暫時可以使用 Invoker Contract 的邏輯。7702 則會直接去修改 EOA 的 code region
+- https://eips.ethereum.org/EIPS/eip-3074
+
+### 2025.05.22
+
+#### 和 3074 的比較
+
+- 3074 引入兩個新的 opcode，`AUTH` opcode 可以讓 Alice's EOA 授權給 Invoker Contract，使其可以以 `AUTHCALL` 以 Alice's EOA 做為 sender 和其他合約互動
+- 3074 並不會讓 EOA 的 code region 固定，而是以簽名讓 EOA 暫時可以使用 Invoker Contract 的邏輯。7702 則會直接去修改 EOA 的 code region
+- https://eips.ethereum.org/EIPS/eip-3074
+
 <!-- Content_END -->
