@@ -160,4 +160,50 @@ Batch multiple transactions into single transaction
 - Preserve Privacy: Support ERC-20 gas payments, session keys, public mempools to minimize data exposure
 - Use Proxies: Delegate to proxies for upgrades and modularity without requiring additional EIP-7702 authorizations for each change
 
+### 2025.05.23
+*Set Code Transaction*  
+We have 4 slots in an EOA  
+- nonce
+- balance
+- code 
+- storage root
+
+EIP-7702 introduces a new way to set code field by sending a new type of EIP-2718 transaction
+The transaction code is different from a normal transaction from EIP-1559, it has to send more data in the transaction payload
+
+An EOA has to sign the message with these additional four information:
+- chain_id: The chain on which the transaction will take place
+- address: The smart contract address that the EOA wants to point to
+- nonce: Security protection for replay purposes
+- y_parity (== v), r and s: Components of the signature that are used to recover the authority 
+
+```
+rlp([
+    chain_id, 
+    nonce, 
+    max_priority_fee_per_gas,
+    max_fee_per_gas, gas_limit, 
+    destination, 
+    value, 
+    data, 
+    access_list, 
+    "authorization_list", 
+    signature_y_parity, 
+    signature_r, 
+    signature_s
+])
+```
+
+```
+authorization_list = [
+    [chain_id_1, address_1, nonce_1, y_parity_1, r_1, s_1], 
+    [chain_id_2, address_2, nonce_2, y_parity_2, r_2, s_2],
+    ...
+]
+```
+
+
+
+
+
 <!-- Content_END -->
