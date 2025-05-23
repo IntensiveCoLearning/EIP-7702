@@ -110,7 +110,16 @@ Note Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day09.md
 
 
 ### 2025.05.23
+#### Advanced EIP-7702: Insecure Delegation Patterns in Practice
+Key Points
+1. Unprotected execute() calls drain delegated accounts
+2. The Illusion of Guardians
+3. Anyone Can Initialize: Insecure Setup of Delegated Contracts
+4. Replayable Signatures: Initialization Can Be Cloned Across Chains
+5. Upgrade and Storage Collision
+6. Replay Attack: oneTimeSend Without Nonce Allows Unlimited Withdrawals
+7. Safe Upgrade with Nonce and Slot Cleanup
 
-
+Note Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day10.md
 
 <!-- Content_END -->
