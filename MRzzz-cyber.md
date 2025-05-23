@@ -342,5 +342,27 @@ DeFi 协议补贴 Gas，鼓励用户交互（如 Aave 的 Gas 返还计划）。
 
 
 
+### 2025.05.22
+请假
+
+### 2025.05.23
+看了一下这个产品
+https://www.bundlebear.com/eip7702-overview/all
+
+目前整体来说是以太坊第一，Base,Optimism,BSC 在后列
+![image](https://github.com/user-attachments/assets/7e2d80da-cec0-401a-b3d6-6d0b4dd9b100)
+现在应用分了三个，Bundles,Paymasters,
+
+![image](https://github.com/user-attachments/assets/50818e50-87f8-4f66-a4cc-633d4730b0d0)
+
+整理了一些 DAPP,后面可以研究一下
+![image](https://github.com/user-attachments/assets/3f9c9c49-e58d-47a6-821b-b7b68d90fbb1)
+
+
+
+
+
+
+
 
 <!-- Content_END -->
