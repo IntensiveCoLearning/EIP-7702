@@ -721,4 +721,48 @@ next: deep dive into erc-4337
 - EIP-7702 `authorization_tuple` value can be provided alongside the `UserOp` struct, but `authorization_tuple` are not included in the `UserOp` itself.
     - So does this tuple is processed and place the `delegated code` to EOA's `code` field just before any ERC-4337 action ? such as parsing, validating `UserOp`
 
+### 2025-05-23
+**Entrypoint**
+The core interface of the EntryPoint contract is:
+```solidity
+function handleOps(PackedUserOperation[] calldata ops, address payable beneficiary);
+```
+- `beneficiary`: The address that will be paid with all the gas fees collected during the execution of the bundle.
+---
+**Smart Contract Account Interface**
+- **core interface**:
+    ```solidity!
+    interface IAccount {
+      function validateUserOp
+          (PackedUserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)
+          external returns (uint256 validationData);
+    }
+    ```
+    - `userOpHash`: A hash over `userOp` (except `signature`), `entryPoint` and `chainId`
+- optional:
+    ```solidity!
+    interface IAccountExecute {
+      function executeUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash) external;
+    }
+    ```
+    - without: `EntryPoint` does `sender.call(userOp.callData);`
+    - with:  `IAccountExecute(sender).executeUserOp(userOp, userOpHash);`
+    - give more flexibility and control such preprocessing, batch operation, custom permission checks
+---
+**Semi-abstracted Nonce Support**
+
+- Traditional `nonce` is **single**, **strictly increasing** number, which limits flexibility — **every operation must follow a strict one-by-one order**.
+- By dividing `nonce` into **`key`** and **`sequence`**, it introduces more freedom and flexibility for managing replay protection and ordering
+    - Parallel transaction streams (e.g., nonce key 1 for gasless txs, key 2 for secure txs),
+	-	Custom nonce strategies, like non-sequential approvals or batch execution,
+	-	More scalable and modular wallet design.
+- Method defined in the `EntryPoint` interface to expose these values:
+    ```solidity!
+    function getNonce(address sender, uint192 key) external view returns (uint256 nonce);
+    ```
+    - When preparing the `UserOp`, bundlers may and should start with `getNonce` to ensure the transaction has a valid `nonce` field.
+    - If the bundler is willing to accept multiple `UserOp` by the same sender into their `alt mempool`, this bundler is supposed to track the `key` and `sequence` pair of the `UserOp` already added in the mempool.
+- For each `key`, the `sequence` is validated by the `EntryPoint` for each `UserOperation`, if the nonce validation fails, the `UserOperation` is considered invalid and the bundle is reverted
+    - Dos or grief attack ?
+    - mitigate by **simulation (mentioned later)** , **reputation Systems** and **Paymaster Penalization**
 <!-- Content_END -->
