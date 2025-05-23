@@ -410,4 +410,27 @@ struct Call {
 - 本範例合約為「單帳戶專用」，如需多人共用應加入 mapping 權限管理。
 - 該合約設計簡潔明確，為理解 EIP-7702 delegation 機制的重要範例，實作可直接用於 Foundry 測試與 Viem integration。
 
+### 2025.05.22
+
+### Delegation 合約：呼叫流程與可擴充設計
+
+Delegation 合約內部的執行邏輯，觀察其批次執行與授權流程，並思考延伸可能性。
+
+#### 執行流程解析：
+
+- 使用 `execute(Call[] calldata calls)` 批次執行多筆交易，每筆 call 包含 `to`, `value`, `data`。
+- 驗證是否由合約自身（即原始帳號）呼叫，拒絕未授權 sender。
+- 批次執行採原子處理，任何一筆失敗則全部 revert，符合 EVM 原生特性。
+- replay protection 透過 `public nonce` 控制簽名唯一性。
+
+#### 可擴充性想法：
+
+- 將執行權限做更多元限制：
+  - 僅允許特定 function selector
+  - 限制執行時間（timestamp）
+  - 限定最大轉帳金額
+- 加入 mapping 結構管理多個使用者 session key 權限，支持 whitelist 模式。
+
+> 透過乾淨封裝的執行流程，加上簡潔的 nonce 驗證，可以讓 delegation 合約具備彈性同時保有安全性基礎。
+
 <!-- Content_END -->
