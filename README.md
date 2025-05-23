@@ -146,7 +146,7 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 | ------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
 | [jameelovecat](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/jameelovecat.md) | ⭕️ | ⭕️ | ❌ | | | | | | | |
 | [k66](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/k66.md) | ✅ | ⭕️ | ✅ | ⭕️ | ❌ | | | | | |
-| [Jack-OuCJ](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/Jack-OuCJ.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |   |
+| [Jack-OuCJ](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/Jack-OuCJ.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | [wayhome](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/wayhome.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |   |
 | [nx-xn2002](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/nx-xn2002.md) | ✅ | ✅ | ⭕️ | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ |   |
 | [qiaopengjun5162](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/qiaopengjun5162.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -188,6 +188,7 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 | [zion](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/zion.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ |   |
 | [kris77z](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/kris77z.md) | ⭕️ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ | ⭕️ | ❌ | | |
 <!-- END_COMMIT_TABLE -->
+
 
 
 
