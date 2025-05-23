@@ -250,6 +250,12 @@ Scheduled Withdrawals: Enables the scheduling of token transfers, facilitating u
   note簽名的內容跟簽名要在一起，一起去生成一組 v r s 
   
   note 如果沒有透明顯示簽名內容，使用者以為自己簽了5 token  但實際上簽了100 token
+
+### 2025.05.23
+設定授權者的帳戶 code 為 0xef0100 || address
+0xef0100 是委託指示符，address 是目標智能合約
+若 address 為零地址，則清除 code
+
 ### 2025.07.12
 
 <!-- Content_END -->
