@@ -765,4 +765,5 @@ function handleOps(PackedUserOperation[] calldata ops, address payable beneficia
 - For each `key`, the `sequence` is validated by the `EntryPoint` for each `UserOperation`, if the nonce validation fails, the `UserOperation` is considered invalid and the bundle is reverted
     - Dos or grief attack ?
     - mitigate by **simulation (mentioned later)** , **reputation Systems** and **Paymaster Penalization**
+ 
 <!-- Content_END -->
