@@ -410,4 +410,55 @@ struct Call {
 - 本範例合約為「單帳戶專用」，如需多人共用應加入 mapping 權限管理。
 - 該合約設計簡潔明確，為理解 EIP-7702 delegation 機制的重要範例，實作可直接用於 Foundry 測試與 Viem integration。
 
+### 2025.05.22
+
+### Delegation 合約：呼叫流程與可擴充設計
+
+Delegation 合約內部的執行邏輯，觀察其批次執行與授權流程，並思考延伸可能性。
+
+#### 執行流程解析：
+
+- 使用 `execute(Call[] calldata calls)` 批次執行多筆交易，每筆 call 包含 `to`, `value`, `data`。
+- 驗證是否由合約自身（即原始帳號）呼叫，拒絕未授權 sender。
+- 批次執行採原子處理，任何一筆失敗則全部 revert，符合 EVM 原生特性。
+- replay protection 透過 `public nonce` 控制簽名唯一性。
+
+#### 可擴充性想法：
+
+- 將執行權限做更多元限制：
+  - 僅允許特定 function selector
+  - 限制執行時間（timestamp）
+  - 限定最大轉帳金額
+- 加入 mapping 結構管理多個使用者 session key 權限，支持 whitelist 模式。
+
+> 透過乾淨封裝的執行流程，加上簡潔的 nonce 驗證，可以讓 delegation 合約具備彈性同時保有安全性基礎。
+
+### 2025.05.23
+
+### Delegation 合約：安全實踐與風險應對
+
+進一步檢視 `BatchCallAndSponsor.sol` 的安全細節與潛在防禦措施，針對真實部署場景整理幾點關鍵觀察。
+
+#### 安全機制重點：
+
+- 簽名驗證結合 nonce 與 call digest，確保操作不可重複。
+- sponsor 執行版本需提供離線簽名，僅允許驗證後才執行。
+- 僅限合約自身觸發內部批次邏輯，避免外部任意操控。
+
+#### 攻擊場景與防範：
+
+- **無授權檢查的 call dispatch**：
+  - 必須針對 caller 做嚴格 `msg.sender` 限制。
+- **儲存空間衝突風險**：
+  - 若日後切換 delegation contract，應使用明確 slot 規劃（如 ERC-7201）。
+- **session key 撤銷機制**：
+  - 設計 revoke function，可一鍵取消所有已簽 session key 授權。
+
+#### 延伸應用：
+
+- 搭配 DApp 可支援「限時自動簽名」與「臨時登入快取」模式。
+- 若加入 event tracking，可針對授權操作做鏈上證明，利於合規審查。
+- 能夠搭建成簡易 smart middleware，成為一種「帳號外掛系統」。
+
+> Delegation 合約的風險來自於**行為邊界不清楚**。若能夠從一開始就對執行者、資料與時間設限，則該合約可作為安全且高度可控的 Smart EOA 邏輯中繼層。
 <!-- Content_END -->
