@@ -319,14 +319,15 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 
 
 
+
 <!-- STATISTICALDATA_START -->
 ## 统计数据
 
-- 总参与人数: 0
-- 完成人数: 0
-- 完成用户: 
-- 全勤用户: 
-- 淘汰人数: 0
-- 淘汰率: 0.00%
-- Fork人数: 0
+- 总参与人数: 43
+- 完成人数: 18
+- 完成用户: Jack-OuCJ, wayhome, nx-xn2002, qiaopengjun5162, MRzzz-cyber, universe-ron, cxc474, fffuuuming, a39955720, york, emailpractice, wiasliaw, gardennn, nghdavid, luleigreat, alexliao, chesley666, zion
+- 全勤用户: Jack-OuCJ, wayhome, qiaopengjun5162, universe-ron, cxc474, fffuuuming, a39955720, york, emailpractice, gardennn, luleigreat, zion
+- 淘汰人数: 25
+- 淘汰率: 58.14%
+- Fork人数: 42
 <!-- STATISTICALDATA_END -->
