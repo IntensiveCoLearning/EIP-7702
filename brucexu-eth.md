@@ -128,4 +128,30 @@ EIP-7702 bridges this gap by enabling EOAs to behave like smart accounts while m
 
 TODO 搞一个 Demo，看看 7702 能不能完全 0 gas（第一笔通过 relayer 的方式）实现指向。
 
+TODO 做一个 7702 小游戏，I need your help，跟朋友一起玩，可以生成一个求助链接，然后朋友帮忙代付 gas
+
+# 2025.05.26
+
+- Use EntryPoint: Require initialization to be called from ERC-4337's EntryPoint for added safety
+  - EntryPoint 合约是 AA 的全局、单例智能合约，是 AA 账户的统一入口，负责验证、执行 UserOperations、Paymaster 等
+  - 这一条建议要求在合约里面判断 initialization call 是从 EntryPoint 合约发出的，这样可以借用 EntryPoint 合约对安全性提供更多检查
+  - TODO 做一个 demo，使用 EOA 调用 EntryPoint 创建一个 AA 账号，以及额外的安全漏洞 demo
+- Avoid Storage Collisions: Switching delegation contracts can cause bugs if storage layouts conflict
+  - 因为合约变量值的存储是按照 slot 位置进行的，所以切换了不同的合约，数据还在，可能产生读取敏感数据或者写入覆盖等问题
+  - 最好使用命名空间、兼容布局或者清理存储等方式
+- Phishing Risks: Only delegate to immutable, CREATE2-deployed contracts - never metamorphic ones
+  - CREATE2 地址计算 address = keccak256(0xff + factory + salt + keccak256(initCode)) 保证了防止指向的合约代码替换
+- Minimize Trusted Surface: Keep delegation contract logic minimal and auditable to avoid critical bugs
+  - 使用必要的核心逻辑合约，不要用大而复杂的，聚焦在模块化的具体功能上面
+
+一些最佳实践：
+
+- Delegation contract should align with AA standards
+- Stay Permissionless: Don't hardcode relayers; anyone should be able to relay & censorship resistance
+- Pick 4337 Bundlers: Use EntryPoint >= 0.8 for gas abstraction
+- dApp integration: Utilize ERC-5792 or ERC-6900, no standardized methond for dApps to request 7702 authorization signatures directly
+- Avoid Lock-In: Stick to open, interoperable standards like Alchemy's Modular Account
+- Preserve Privacy: Support ERC-20 gas payments, session keys, public mempools to minimize data exposure
+- Use Proxies: Delegate to proxies for upgrades and modularity without requiring additional EIP-7702 authorizations for each change
+
 <!-- Content_END -->
