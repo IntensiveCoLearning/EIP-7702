@@ -246,4 +246,123 @@ Yearn 像 “订阅服务”：
 
 明天思考一下赞助费用和权限管理的应用场景
 
+
+
+### 2025.05.19
+理解聚合器很简单：就是一套金融组合策略，通过智能合约自动执行，通常是一些低风险金融策略，但是组合起来也挺高的，最简单的道理就是复投策略，你传统的手动 Claim 再复投，而聚合器可以设置一个时间周期 Claim 再复投的策略
+然后聚合器首先需要的是读取不同 DeFi 协议的输出，然后组合，并通过 Token 可以读取标准化的 APR 输出，并转移到提供最佳回报的地方。
+
+
+今天在思考一个 7702 的应用场景，类似于聚合器，传统的聚合器问题在于
+![image](https://github.com/user-attachments/assets/6289ebf3-5440-4fe1-8991-0ba0f5c16c35)
+
+我其实在想的是一种能自动显示目前 DeFi 协议 apy 的产品，比如 uniswap 稳定币或者借贷产品的收益，然后像一个一个的组件显示在前端，用户可以自由拖动这些产品，最后组装成一个策略包，一键发起交易（其中就运用到 7702 打包交易的功能）
+和 AI 的对话
+![image](https://github.com/user-attachments/assets/a40f2d25-e007-4e49-9c76-4dcd7bc1889d)
+
+![image](https://github.com/user-attachments/assets/403b94e9-f2b8-4c33-9877-35feec22a173)
+
+MVP 需求实现
+![image](https://github.com/user-attachments/assets/2de53015-b1a7-41d4-9667-2a83a8914552)
+
+
+
+
+
+### 2025.05.20
+7702 的另外一个应用方向：钱包授权
+在了解 7702 之前，我先体验了一下目前的钱包授权工具:Revoke 和 rabby 内置的钱包取消授权功能
+https://revoke.cash/
+![image](https://github.com/user-attachments/assets/fd42f72b-b5f1-4294-b983-8ac61afd7db8)
+
+Revoke Cash 我觉得是比较适合于批量取消授权的的，然后也足够简单,不需要链接钱包等等
+7702 带给钱包+授权方面的思考，我的想法是有几点
+1. 批量授权，比如针对一个 DeFi 三件套的授权
+2. 授权的范围大小，我授权的范围在我每天只花 1% 的 ETH
+3. 授权的代币范围，适用于 PayFi 方面
+
+
+### 2025.05.21
+7702 的另外一个应用方向：Gas 代付
+这会是下一个大规模应用的起点，大部分的钱包新人面临的第一个问题在于 Gas 没有，需要从交易所里进行充值并冲入，其实我觉得这一步完全可以不需要
+一、Gas 代付的核心应用场景
+1. 新用户引导（Onboarding）
+场景：新用户没有原生链代币（如 ETH、MATIC），无法支付 Gas。
+
+解决方案：
+
+项目方或赞助商代付 Gas，让用户直接与 DApp 交互（如 Mint NFT、参与空投）。
+
+结合 账户抽象（AA），实现无 Gas 交易（如 Biconomy、Stackup）。
+
+2. 批量交易 & 企业级应用
+场景：企业需要批量执行链上操作（如发放工资、NFT 空投）。
+
+解决方案：
+
+赞助商（企业）统一支付 Gas，用户只需签名，无需持有 Gas 代币。
+
+例如：LayerZero 的 Omnichain 跨链 Gas 代付。
+
+3. 游戏 & 社交应用
+场景：链游玩家或社交用户不希望频繁购买 Gas 代币。
+
+解决方案：
+
+游戏开发商代付 Gas，玩家只需关注游戏体验。
+
+例如：Immutable X 的 Gas-free NFT 交易。
+
+4. 广告 & 营销激励
+场景：项目方希望吸引用户完成特定任务（如注册、分享）。
+
+解决方案：
+
+赞助 Gas 作为奖励（如完成链上任务后返还 Gas）。
+
+例如：QuestN 或 Galxe 的任务平台。
+
+5. DeFi 协议优化
+场景：用户因 Gas 过高不愿执行小额交易（如借贷、质押）。
+
+解决方案：
+
+DeFi 协议补贴 Gas，鼓励用户交互（如 Aave 的 Gas 返还计划）。
+
+例如：1inch Fusion 的 MEV 保护 + Gas 补贴。
+
+6. 跨链 & 多链交互
+场景：用户需要跨链操作但缺乏目标链 Gas。
+
+解决方案：
+
+跨链桥或中继器代付目标链 Gas（如 Socket、LiFi）。
+
+例如：Connext 的跨链 Gas 代付。
+
+
+
+### 2025.05.22
+请假
+
+### 2025.05.23
+看了一下这个产品
+https://www.bundlebear.com/eip7702-overview/all
+
+目前整体来说是以太坊第一，Base,Optimism,BSC 在后列
+![image](https://github.com/user-attachments/assets/7e2d80da-cec0-401a-b3d6-6d0b4dd9b100)
+现在应用分了三个，Bundles,Paymasters,
+
+![image](https://github.com/user-attachments/assets/50818e50-87f8-4f66-a4cc-633d4730b0d0)
+
+整理了一些 DAPP,后面可以研究一下
+![image](https://github.com/user-attachments/assets/3f9c9c49-e58d-47a6-821b-b7b68d90fbb1)
+
+
+
+
+
+
+
+
 <!-- Content_END -->

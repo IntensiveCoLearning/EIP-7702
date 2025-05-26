@@ -125,4 +125,85 @@ Batch multiple transactions into single transaction
 - 聚合器(Aggregator)
   * 聚合器是一个智能合约，它实现了一个支持聚合的签名方案
   * 通过将多个签名合并成一个签名, 聚合器有助于节省calldata成本
+
+### 2025.05.19
+*Important Limitations*
+
+- The EOA's Private Key Remains All-Powerful  
+  * The private key can always override any delegation by signing a new transaction
+- No Deployment Permanence  
+  * Unlike a deployed smart contract account with its own address, an EIP-7702 delegation can be overwritten
+- Multichain Challenges
+  * EIP-7702 authorizations are chain-specific, which means users would need to sign separate authorizations for each chain
+- Controlled by wallets, not applications
+  * Wallet providers have made it clear that they will reject transactions containing authorization fields from applications
+  * Applications cannot directly use EIP-7702 to delegate user accounts to their preferred smart accounts
+- ERC-7710/7715 Approach
+  * ERC-7710: Creates a standard interface for smart contracts to delegate permissions to other contracts. Think of it as an extension of the ERC-20 approve function but for arbitrary permissions.
+  * ERC-7715: Introduces a new JSON-RPC method called wallet_grantPermissions that applications can use to request permissions from wallets.
+- Work flow
+  * A wallet uses EIP-7702 to delegate the user's EOA to a smart contract that supports EIP-7710
+  * An application requests permission via EIP-7715 to spend funds from the user's account
+  * The wallet displays this request to the user
+  * If approved, the application can now execute actions through the delegation
+- Applications
+  * Request direct permission for their contract to interact with the user's account, or
+  * Deploy their own smart account (called a "companion account") that interacts with the user's account
+
+### 2025.05.22
+*BEST PRACTICES*
+- Delegation contract should align with AA standards (ERC-4337 compatible)
+- Stay Permissionless: Don’t hardcode relayers; anyone should be able to relay & censorship resistance
+- Pick 4337 Bundlers: Use EntryPoint ≥ 0.8 for gas abstraction
+- dApp Integration: Utilize ERC-5792 or ERC-6900, no standardized method for dApps to request 7702 authorization signatures directly
+- Avoid Lock-In: Stick to open, interoperable standards like Alchemy’s Modular Account
+- Preserve Privacy: Support ERC-20 gas payments, session keys, public mempools to minimize data exposure
+- Use Proxies: Delegate to proxies for upgrades and modularity without requiring additional EIP-7702 authorizations for each change
+
+### 2025.05.23
+*Set Code Transaction*  
+We have 4 slots in an EOA  
+- nonce
+- balance
+- code 
+- storage root
+
+EIP-7702 introduces a new way to set code field by sending a new type of EIP-2718 transaction
+The transaction code is different from a normal transaction from EIP-1559, it has to send more data in the transaction payload
+
+An EOA has to sign the message with these additional four information:
+- chain_id: The chain on which the transaction will take place
+- address: The smart contract address that the EOA wants to point to
+- nonce: Security protection for replay purposes
+- y_parity (== v), r and s: Components of the signature that are used to recover the authority 
+
+```
+rlp([
+    chain_id, 
+    nonce, 
+    max_priority_fee_per_gas,
+    max_fee_per_gas, gas_limit, 
+    destination, 
+    value, 
+    data, 
+    access_list, 
+    "authorization_list", 
+    signature_y_parity, 
+    signature_r, 
+    signature_s
+])
+```
+
+```
+authorization_list = [
+    [chain_id_1, address_1, nonce_1, y_parity_1, r_1, s_1], 
+    [chain_id_2, address_2, nonce_2, y_parity_2, r_2, s_2],
+    ...
+]
+```
+
+
+
+
+
 <!-- Content_END -->

@@ -259,38 +259,6 @@ timezone: UTC+8
 > **TL;DR**：7702 像「FOC 可攜帶鍵盤」，4337 是「高級機械鍵盤」。小事用 7702，大事上 4337。
 
 ---
-
-# 2 🖼️ Mermaid — 雙流比較
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant U as User
-    participant W as Wallet
-    participant L1 as L1 EVM
-    participant B as Bundler
-    participant EP as EntryPoint
-
-    %% --- 7702 Path ---
-    rect rgb(230,255,230)
-        U ->> W: 產生 type 0x04 TX\n(含 authorization_list)
-        W ->> L1: eth_sendRawTransaction
-        L1 ->> L1: [A] 處理 authorization\n    • ecrecover\n    • 寫 delegation
-        L1 ->> L1: [B] 執行 calldata / value
-        L1 -->> U: TX receipt
-    end
-
-    %% --- 4337 Path ---
-    rect rgb(230,230,255)
-        U ->> W: 產生 UserOperation
-        W ->> B: eth_sendUserOperation
-        B ->> EP: handleOps(UserOp)
-        EP ->> L1: 執行\n(驗簽 + call target)
-        L1 -->> EP: 完成
-        EP -->> B: emit events
-        B -->> U: UserOpHash + status
-    end
-```
 ### 2025.05.17
 
 =================
@@ -441,4 +409,344 @@ sequenceDiagram
 - 是否能把「安全性」跟「操作性」拆開來設計？
 
 這樣的設計邏輯，是我從 7702 學到最大的事。
+
+### 2025.05.19
+# Day 5 延伸篇 — ⚠️ 7702 安全風險總結與防禦策略
+
+## 🧨 為什麼需要專門一篇談安全？
+
+EIP-7702 給了我們一個很有力的武器：在交易中動態載入邏輯。  
+這讓原本單純的帳號突然「有了智慧」，可以一次完成多個操作、可以授權別人執行指令、可以設置 session key。
+
+但這也代表一件事：  
+> **原本不存在的攻擊面，現在都出現了。**
+
+我今天的心得不寫功能、不想應用，而是 *專心找漏洞*。
+
+如果我們用 7702 時忽略安全問題，那等於在 EOA 上加了一個無蓋的插座，誰都能插進來電自己想要的東西。  
+以下就是我整理出來的三大風險與防禦建議，搭配實際案例與思考方式，讓開發者能夠從 Day 1 就避開地雷。
+
+---
+
+## ⚠️ 風險 1：Access Control 存取控制缺失
+
+### 🛠 問題說明：
+當我們透過 7702 指定了一個 delegation 合約，這個合約**就是你帳號的「代理人」**。  
+如果這個代理合約沒有寫權限控制，那任何人都可以用它代表你做事情。
+
+### 常見錯誤：
+```solidity
+// 危險！沒有限制 msg.sender
+function doSomething() external {
+    target.call{value: 0}(payload);
+}
+```
+### 攻擊手法：
+
+* 惡意者發送含有 delegation 的交易，指向這個合約  
+* 這個合約又沒做存取限制  
+* 結果他就可以幫你「免費轉帳」給自己  
+
+---
+
+### 防禦方式：
+
+* 加上 `onlyAuthorized()` modifier，驗證 `msg.sender` 或 `tx.origin`  
+* 限定特定 session key 執行特定功能  
+* 所有外部函式都要做 `require(caller == expectedKey)` 驗證  
+
+---
+
+### 風險 2：Initialization 啟動機制的假設錯誤
+
+### 問題說明：
+
+在 7702 的上下文中，你的合約不是「被部署」，而是「被動載入」。  
+這表示什麼？  
+
+> `$ constructor 根本不會執行。$`
+
+如果你在 constructor 設置 `owner` 或 `config`，這些設定根本不會被執行。
+
+---
+
+### 實例錯誤：
+
+```solidity
+constructor(address admin) {
+    owner = admin; // 不會執行！
+}
+```
+
+
+* 改用 `initialize()` 並加 `require(!initialized, "already done")`  
+* 把初始化與 delegation 設置放在同一筆交易內完成  
+* 視需求檢查 `msg.sender == tx.origin` 避免 relay 風險  
+
+---
+
+### 風險 3：Storage Collision 儲存空間衝突
+
+### 🛠 問題說明：
+
+你今天用一個 delegation contract A，裡面寫了一些資料；  
+過幾天你改用另一個 contract B 來處理 delegation，  
+但舊的儲存資料還在 slot 裡。
+
+兩份合約如果變數型別或順序不同，就會出問題。
+
+---
+
+### 舉例：
+
+* 合約 A slot 0 是 `bool active`  
+* 合約 B slot 0 是 `uint256 balance`  
+> `$ 你以為是 true，卻被當成一個數字解讀！$`
+
+---
+
+### 潛在後果：
+
+* 錯誤的餘額判斷，導致交易通過  
+* 權限混亂，未授權的人誤執行成功  
+* 特定函式誤以為啟用過，導致流程錯亂  
+
+---
+
+### 防禦方式：
+
+* 合約儲存結構要一致，或強制使用固定 slot（參考 OpenZeppelin 實踐）  
+* 加版本號機制，例如：slot 100 存 `"v1"` / `"v2"`，不同版本做不同解析  
+* 所有 delegation 合約都要經過相同的審計與邏輯流程  
+
+---
+### 結語：你給了帳號新能力，也要給它新盔甲
+
+EIP-7702 很強，沒錯。  
+但你越自由，風險就越高。
+
+7702 讓我們可以像 plug-in 一樣給帳號裝上智慧功能，  
+但你如果不裝防毒軟體、不鎖門、不驗證訪客，  
+那你就只是在幫駭客鋪紅地毯。
+
+開發者要時時提醒自己一句話：
+
+> **我今天不是寫合約而已，我是在寫別人資產的守門員。**
+
+用 7702 的人，責任更重。  
+也因此，我今天這篇不是教你怎麼用，而是教你怎麼 **不被用**。
+
+### 2025.05.20
+一次性的智慧帳號外掛
+```text
+Transaction 格式（新增欄位）：
+
+[
+  chain_id,
+  nonce,
+  max_priority_fee_per_gas,
+  max_fee_per_gas,
+  gas_limit,
+  destination,
+  data,
+  access_list,
+  [[contract_code, y_parity, r, s], ...], // 新增
+  signature_y_parity,
+  signature_r,
+  signature_s
+]
+```
+
+## 願景與挑戰並存
+
+### 使用者角度（User）
+
+這種「一次性升級」大大簡化 Smart Wallet 的採用。  
+但也引入一個大問題：
+
+>  一旦你簽錯一段惡意 `contract_code`，駭客可以在一筆交易裡洗光你整個錢包！
+
+這代表錢包軟體很可能會限制使用者隨意簽署 7702 交易。  
+可能會像這樣：
+
+- 「開啟 Pro 模式」
+- 「允許某些網站傳送 7702 tx」
+- 或完全禁用 7702 簽名
+
+---
+
+### DApp 開發者角度（Dapps）
+
+Dapps 想送 7702 交易會被錢包審查 `contract_code` 是否在白名單內。  
+
+預期未來會有新的 RPC 標準（像 [ERC-5792](https://eips.ethereum.org/EIPS/eip-5792)）來讓 Dapps 傳送批次交易，至於是否使用 7702 由錢包自行決定。
+
+如果 Dapps 想自行定義 gas sponsor / paymaster 邏輯，未來可能會需要像 [ERC-7677](https://eips.ethereum.org/EIPS/eip-7677) 這樣的新標準搭配實作。
+
+---
+
+### 錢包角度（Wallet Providers）
+
+錢包的第一職責是保護使用者，面對 7702，他們可能會：
+
+- 限制 Dapps 發起 7702 請求  
+- 採用白名單的 `contract_code`（由錢包方提供）  
+- 嚴格模擬/分析 code 行為後再顯示給使用者  
+- 只提供給高級用戶開啟
+
+---
+
+## 技術設計延伸討論（by Vitalik）
+
+Vitalik 提出一些值得社群深入討論的技術方向：
+
+1. **`contract_code` 要不要換成合約地址？**  
+   - 優點：可重複使用現有合約  
+   - 缺點：可能造成重用攻擊風險（reuse attack）
+
+2. **要不要連同 `chainId`、`nonce` 一起簽名？**  
+   - 增加安全性（防重放攻擊）與可撤銷性  
+   - 缺點是使用者每次都要重新簽署（影響 UX）
+
+3. **是否禁止 `SSTORE`？**  
+   - 有助於避免儲存衝突（storage collision）  
+   - 但也讓 contract_code 的靈活性受限
+
+4. **是否允許 code 保留？（類似 [EIP-5003](https://eips.ethereum.org/EIPS/eip-5003)）**  
+   - 使用者可以選擇是否永久保留合約邏輯
+
+5. **是否允許 `initCode`？**  
+   - 讓 constructor code 可以先執行，提供初始化邏輯  
+   - 但也增加操作複雜性與潛在攻擊面
+
+---
+
+## Zyfi 的角色與展望
+
+Zyfi 是 zkSync 上的 gas abstraction 領導者，擁有：
+
+- 75 萬筆交易  
+- 11 萬用戶  
+- $57K 美金的代付價值  
+
+EIP-7702 為 Zyfi 帶來更廣泛的應用空間，例如：
+
+- 跨鏈代付（Omnichain Paymaster）  
+- EOA 層級的免 gas 操作  
+- Dapp 自定義代付邏輯（batching / approval flows）
+
+---
+
+## 未來發展與問答精選（FAQ）
+
+### 發佈時程？
+預計將於 Pectra 硬分叉（2024 Q4～2025 Q1）合併進主網。
+
+---
+
+### 會取代 ERC-4337 嗎？
+不會，而是互補。  
+- ERC-4337 提供模組化生態（bundler, paymaster）  
+- EIP-7702 提供低門檻、立即性的帳戶功能擴充  
+
+---
+
+### 有什麼風險？
+
+- 簽錯 `contract_code`，整個錢包可能會在一筆交易中被清空  
+- 若簽名未包含 `nonce` 或 `chainId`，將無法防範重放攻擊
+
+---
+
+### 如何避免？
+
+- 錢包層進行 gatekeeping，限制 Dapp 自由發起 7702 交易  
+- Dapp 僅使用白名單內的 `contract_code`  
+- 加入 `nonce + chainId` 驗證以防重放攻擊  
+
+---
+
+### 2025.05.21
+## 🔄 技術設計延伸討論（Vitalik 提出）
+
+Vitalik 針對 7702 提出數項變體設計與討論方向：
+
+1. **contract_code 改為 contract_address？**  
+   - ✅ 可節省儲存與 gas 成本  
+   - ❌ 攻擊者可能重用他人部署的惡意合約地址
+
+2. **簽名時加入 chainId？**  
+   - ✅ 防止跨鏈重放攻擊  
+   - ❌ 減少重用性與測試靈活度
+
+3. **簽名時加入 nonce？**  
+   - ✅ 防止單筆交易重複簽名被濫用  
+   - ❌ 每筆交易都要重新簽署兩次，影響 UX
+
+4. **禁止使用 `SSTORE`？**  
+   - ✅ 避免儲存欄位衝突（Storage Collision）  
+   - ❌ 無法使用狀態變數，不利於複雜邏輯合約
+
+5. **允許保留 code（像 EIP-5003）？**  
+   - ✅ 用戶可 opt-in 成為 Smart Wallet  
+   - ❌ 不再是「一次性智慧化」而是永久轉換
+
+6. **支援 initCode？**  
+   - ✅ 合約在執行前可先初始化  
+   - ❌ 增加攻擊面，容易誤觸危險 fallback 或 delegatecall
+
+---
+
+## Zyfi 的角色與應用潛能
+
+Zyfi 作為 zkSync 上的知名 Paymaster 基礎建設商，已完成：
+
+- 750,000 筆交易
+- 113,000 名用戶
+- 超過 $57,000 美金的代付紀錄
+
+EIP-7702 將讓 Zyfi 有機會：
+
+- 支援 **EOA 級代付服務**（無需 Smart Wallet）
+- 延伸服務至 **Omnichain Paymaster**
+- 實作 **免 gas 登入與互動體驗**，提供 DApp 端的抽象化入口
+
+---
+
+### 會取代 ERC-4337 嗎？
+不會，EIP-7702 是 **補充而非取代**，兩者可併存並相互合作。
+
+### 有什麼風險？
+
+- 簽錯 code 可能一筆交易洗光你所有資產
+- 如果未加入 chainId 或 nonce，重放攻擊風險大幅上升
+
+### 如何避免？
+
+- 使用錢包內建模擬與白名單機制
+- 加入 `nonce + chainId` 驗證防止簽名重複使用
+- 教育使用者分辨「普通登入」與「contract_code 簽名」
+
+---
+
+## Smart Wallet 轉型的中繼站
+
+在過去的幾年，我們從 EOA 到 Smart Contract Wallet 的演進中看到了無數提案：ERC-4337、EIP-3074、EIP-5003，而今天的主角 7702，更像是一個「平行世界的智慧化通道」。
+
+它不要求你捨棄舊帳號、不要求你重新部署，只在你**需要的時候**給你智慧外掛的能力。  
+這種設計本身，就極具 Web3 精神：模組化、選擇權、用戶自主。
+
+> 7702 是智慧帳戶的臨時變身器，短短幾行簽名，就能讓你的 EOA 完成高階操作。
+### 2025.05.22
+
+- EIP-7702 背後代表的是什麼樣的設計哲學？
+- 7702 並不是一個要立即取代 ERC-4337 的提案，也不是要重新定義 EOA 或 Smart Wallet 的未來。它提供的是一個「選擇權」：當你不想換地址、不想部署新帳戶、只想在一筆交易中完成智慧化動作時，你可以暫時變身。
+- 這種「一次性能力」的想法，非常符合現代系統設計的趨勢 —— 模組化、可逆、低門檻試用。它讓使用者保有主導權，也給開發者更多彈性去平衡 UX 和安全性。
+- 今天我最大的收穫，不是新學到的語法，而是理解一個標準為何設計成這樣，以及它在使用者與基礎建設中間扮演的角色。這種理解，才是讓我能從工程師變成系統設計師的養分。
+### 2025.05.23
+- EIP-7702 再怎麼設計得好，若用戶不知道「7702 簽名是什麼」、不知道「簽錯會有什麼後果」，那最終只會變成駭客的新工具。從 phishing 到 fake DApp，這不是技術能解決的，是 UX 與教育層面要一起補位。
+- 我們不能假設每個使用者都能分辨 EIP-7702 跟一般簽名的差別。因此，錢包界面、簽名提示、交互模擬、風險警告都要設計進去。
+- 今天我模擬了幾種教育設計，例如在簽署 7702 簽名時，強制使用者看到合約內容摘要、自動分析風險等。這些設計可能會讓人覺得「多此一舉」，但這正是安全 UX 該有的樣子。
+- 技術推進永遠跑得比安全快一點點。我們的任務，不是停下技術，而是用設計幫它補上剎車。
+
 <!-- Content_END -->

@@ -47,4 +47,29 @@ Day 4 笔记：https://www.notion.so/Day-4-EIP-7702-Recovery-1f5f5920d54c809eb87
 
 Day 5 笔记：https://www.notion.so/Day-5-1f7f5920d54c80c3b566f9817dcc1972?pvs=4
 
+### 2025.05.19
+记录了Set Code 代付 Gas 的代码实践
+
+Day 6 笔记：https://www.notion.so/Day-6-Set-Code-Gas-1f8f5920d54c8022a639ce72f1b86faa?pvs=4
+
+### 2025.05.20
+记录了EIP-7702 相关技术思考
+
+Day 7 笔记：https://www.notion.so/Day-7-EIP-7702-1f9f5920d54c8099bfb4c22a30959b4d?pvs=4
+
+### 2025.05.21
+
+记录了和账户抽象相关的协议，分析优缺点
+
+Day 8 笔记：https://www.notion.so/Day-8-7702-EIP-1faf5920d54c80eb8358d71e32e6327b?pvs=4
+
+### 2025.05.22
+记录了7702协议对 DEFI 的影响
+
+Day 9 笔记：https://www.notion.so/Day-9-7702-DEFI-1fbf5920d54c808e9ec0e92529dc5d6d?pvs=4
+
+### 2025.05.23
+记录了7702的一些视频实践内容
+
+Day 10 笔记：https://www.notion.so/Day-10-7702-1fcf5920d54c809b9123c936744c0a62?pvs=4
 <!-- Content_END -->

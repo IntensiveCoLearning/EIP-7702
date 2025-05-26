@@ -222,4 +222,275 @@ timezone: UTC+8
 > -   **EOA 的 nonce 不會在交易執行過程中增加**: 在 EIP-7702 之前，EOA 的 nonce 僅會在交易開始前確認並增加，不會在執行過程中變化。但 EIP-7702 後改變了這一點，一旦帳戶被委託（delegated），它在執行交易時可以呼叫 CREATE 指令來部署新合約，這會使帳戶的 nonce 在執行過程中增加。
 > -   **`tx.origin == msg.sender` 僅在最外層呼叫中成立**: 在 EIP-7702 之前，`tx.origin == msg.sender` 只會在最外層的交易呼叫中為真。在 EIP-7702 後改變了這一點，委託後的 EOA 可以在單一交易中發出多次內部呼叫，使 `msg.sender` 在不同執行上下文中變化，導致 tx.origin == msg.sender 不再只在頂層成立。
 
+### 2025.05.19
+
+本日學習內容：
+
+-   使用 Foundry 在本地實測 EIP-7702 功能
+
+> # 使用 Foundry 在本地測試 EIP-7702
+>
+> 使用 `anvil` 節點在本地啟用測試環境，並且開啟 Odyssey 功能：
+>
+> ```bash
+> anvil --odyssey
+> ```
+>
+> 選定一個測試用的 EOA 及其對應的私鑰加入環境變數：
+>
+> ```bash
+> export DEPLOYER_PK=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 export DEPLOYER_ADDRESS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+> ```
+>
+> 用 `DEPLOYER` 部署一個 `DelegateContract` 合約：
+>
+> ```bash
+> forge create DelegateContract --private-key $DEPLOYER_PK --broadcast
+> ```
+>
+> ![image](images/alex/image2.png)
+>
+> ![image](images/alex/image3.png)
+>
+> 以下為 `DelegateContract` 合約：
+>
+> ```solidity
+> // SPDX-License-Identifier: MIT
+> pragma solidity ^0.8.20;
+>
+> /**
+> * @notice VULNERABLE, UNAUDITED CODE. DO NOT USE IN PRODUCTION.
+> * @author The Red Guild (@theredguild)
+> */
+> contract DelegateContract {
+>    struct Call {
+>        bytes data;
+>        address to;
+>        uint256 value;
+>    }
+>
+>    error ExternalCallFailed();
+>
+>    function execute(Call[] memory calls) external payable { // lack of access control
+>        for (uint256 i = 0; i < calls.length; i++) {
+>            Call memory call = calls[i];
+>
+>            (bool success,) = call.to.call{value: call.value}(call.data);
+>            require(success, ExternalCallFailed());
+>        }
+>    }
+>
+>    // no receive function nor payable fallback function
+> }
+> ```
+>
+> > [!WARNING]  
+> > 注意 `DelegateContract` 合約僅供學習用，請勿在 production 環境使用。
+>
+> 將部署好的 `DelegateContract` 合約地址加入環境變數：
+>
+> ```bash
+> export DELEGATE=0x5FbDB2315678afecb367f032d93F642f64180aa3
+> ```
+>
+> 選定另一個測試用的 EOA 及其對應的私鑰加入環境變數，這個測試用的 EOA 我們取名叫 Alice：
+>
+> ```bash
+> export ALICE_PK=0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d export ALICE_ADDRESS=0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+> ```
+>
+> 我們待會要將 Alice EOA 授權委託變成 `DelegateContract` 合約，在此之前可以先檢查 Alice EOA 是否有包含 bytecode：
+>
+> ```bash
+> cast code $ALICE_ADDRESS
+> //output: 0x
+> ```
+>
+> 接著用 Alice EOA 的私鑰（鏈下）簽署 EIP-7702 授權：
+>
+> ```bash
+> cast wallet sign-auth $DELEGATE --private-key $ALICE_PK
+>
+> //output: 0xf85c827a69945fbdb2315678afecb367f032d93f642f64180aa38080a00a17b68dcbf7db8bafb45cbcbeb61316aa330f045e43425e1db41e6c794c2e64a01a7f46131075975b44ae67f3bc968a9bce64f257b24571d945bb9026812c114e
+> ```
+>
+> 接著將 EIP-7702 授權結果帶上鏈：
+>
+> ```bash
+> export SIGNED_AUTH=$(cast wallet sign-auth $DELEGATE --private-key $ALICE_PK)
+> cast send $(cast az) --private-key $ALICE_PK --auth $SIGNED_AUTH
+> ```
+>
+> ![image](images/alex/image4.png)
+>
+> > [!WARNING]  
+> > 理論上 Alice EOA 的 nonce 應該要變成 2，但是查看後只有 1，不確定是不是 Bug。
+> > 將 EIP-7702 授權帶上鏈後，我們可以觀察到 Alice EOA 中含的 Bytecode 已經不一樣了：
+>
+> ```bash
+> cast code $ALICE_ADDRESS
+> //output: 0xef01005fbdb2315678afecb367f032d93f642f64180aa3
+> ```
+>
+> 檢查 Alice EOA 地址下的 bytecode 長度，可看出 Alice EOA 的 bytecode 長度已經不為 0。
+>
+> ```bash
+> cast codesize $ALICE_ADDRESS
+> // 23
+> ```
+>
+> 如果要取消授權變回普通的 EOA，只需將授權的委託地址指定為 0 地址：
+>
+> ```bash
+> cast send $(cast az) --private-key $ALICE_PK --auth $(cast wallet sign-auth $(cast az) --private-key $ALICE_PK)
+> ```
+>
+> 查看取消 EIP-7702 授權後的結果：
+>
+> ```bash
+>  cast codesize $ALICE_ADDRESS
+> //output: 0
+> cast code $ALICE_ADDRESS
+> //output: 0x
+> ```
+
+### 2025.05.20
+
+本日學習內容：
+
+-   針對昨天測試 EIP-7702 時發現的問題找原因
+
+> 背景：昨天在測試 EIP-7702 授權時，如果是 Alice 自己授權且帶上鏈的情況下，Alice 的 nonce 值應該是要增加 2，但使用 foundry 測試時只有增加 1。
+>
+> 這邊經過幾次嘗試後，確定 nonce 值的計算有問題，所以我在 Foundry 的 repo 中，提了一個 issue，等待回覆後再來更新。
+>
+> issue: https://github.com/foundry-rs/foundry/issues/10573
+
+### 2025.05.21
+
+本日學習內容：
+
+-   解決昨天提的 Issue
+
+> 為什麼使用以下方式進行 EIP-7702 授權時，Alice 的 EOA nonce 只增加 1，而不是增加 2？
+>
+> ```bash
+> export SIGNED_AUTH=$(cast wallet sign-auth $DELEGATE --private-key $ALICE_PK)
+> cast send $(cast az) --private-key $ALICE_PK --auth $SIGNED_AUTH
+> ```
+>
+> 因為 `cast wallet sign-auth` 是一個獨立的指令，它並不知道你接下來會如何使用這個簽名（例如：是否由同一個帳號發送交易，或交由其他帳號）。因此，它預設會使用該帳號當下的 nonce 作為簽名資料的一部分。
+> 但若想讓 Alice 自我授權（即自己授權自己），其實不需要先手動簽名，而是可以直接這樣寫：
+>
+> ```bash
+> cast send $(cast az) --auth $DELEGATE --private-key $ALICE_PK
+> ```
+>
+> 這樣做時，`cast send` 會自動處理 nonce 的邏輯：它會將授權中使用的 nonce 設為 Alice 當前帳號 nonce + 1（因為當前的 nonce 會用來發送這筆交易）。如此一來，上鏈時就會同時遞增兩次 nonce，一次用於發送交易，一次用於授權簽名，達成自我授權時 nonce 增加 2 的正確行為。
+
+### 2025.05.22
+
+本日學習內容：
+
+-   [PREP (Provably Rootless EIP-7702 Proxy) Method Deep Dive](https://blog.biconomy.io/prep-deep-dive/#goals)
+
+> # Nicks’ Method 是什麼？
+>
+> 這個方法由以太坊創辦人之一 Vitalik Buterin 想出來，並由 Nick Johnson 首次實作。
+> 它的核心是利用一個特性：
+>
+> > 在 EVM 中，一筆交易的「發送者地址」（`from`）可以被從交易本身的參數中恢復出來，透過一個叫 `ecrecover` 的函式。
+>
+> 也就是說，你不需要事先知道帳號的私鑰，只要你能構造出一筆交易，並填入一組看似有效的簽名（`r`, `s`, `v` 值），那你就可以找出一個與這簽名匹配的地址。
+>
+> ## 大致流程
+>
+> 1. 開發者準備好一筆交易（例如：發送 5 ETH 給某地址）。
+> 2. 不用私鑰來簽名這筆交易，而是隨機產生一組簽名參數：r, s, v。
+> 3. 用 ecrecover 函數，從這筆交易的內容 + 簽名，推導出一個帳號地址 A。
+> 4. 然後開發者只要將「5 ETH + 手續費」發送到這個地址 A（也就是那個虛構出來的帳號）。
+> 5. 最後，只要把這筆交易送出，EVM 會認為這筆交易是從地址 A 發出且簽名有效，所以它會被正常執行！
+>
+> 總結來說，Nicks’ Method 就像是一種 「逆向產生地址」 的方法：
+>
+> -   你先寫好交易，隨機造出一組簽名。
+> -   然後你問 EVM：「哪個地址的私鑰會產生這組簽名？」
+> -   再把錢給這個地址，讓它完成交易 —— 即便你從來不知道它的私鑰是什麼。
+>     這就是所謂的 Keyless Execution（無私鑰執行）。
+>
+> # PREP 方法概覽
+>
+> PREP（Provably Rootless EIP-7702 Proxy） 是一種創新的帳戶部署方法，結合了 EIP-7702 的授權機制、Nicks’ Method（無私鑰執行）以及特殊的加密簽名推導。
+> 這種方法允許開發者**在不擁有私鑰的情況下部署智能帳戶**，並確保沒有任何人能夠控制該帳戶的根私鑰。
+>
+> # PREP 方法實作步驟（結合 Nicks’ Method + EIP-7702）
+>
+> ## Step 1：產生 EIP-7702 授權訊息哈希
+>
+> 建立授權訊息的哈希，格式如下：
+>
+> ```javascript
+> const messageHash = keccak256(
+>     concat([
+>         MAGIC_PREFIX, // 固定的前綴 (0x05)
+>         rlp.encode([
+>             0, // chain_id = 0（代表在所有鏈上都有效）
+>             smart_account_address, // 智能帳戶地址（singleton 合約地址）
+>             0, // nonce = 0（新帳戶）
+>         ]),
+>     ])
+> );
+> ```
+>
+> ## Step 2：隨機產生 ECDSA 簽名 (r, s, v)
+>
+> 這裡不需要私鑰，使用隨機數生成有效的簽名值：
+>
+> ```javascript
+> const r = randomBytes(32); // 32 bytes 隨機值
+> const s = randomBytes(32); // 需確保 s < secp256k1n / 2（符合 EIP-2）
+> const v = randomChoice([27, 28]); // v 可為 27 或 28
+> ```
+>
+> # Step 3：利用簽名還原簽名者地址
+>
+> 從上述 messageHash 和 signature 中 recover 一個帳戶地址：
+>
+> ```javascript
+> const signature = concat([r, s, v]);
+> const recoveredAddress = recoverAddress(messageHash, signature);
+> ```
+>
+> 這個 recoveredAddress 即為最終要變成智能帳戶的帳戶地址，你並不知道它的私鑰。
+>
+> # Step 4：構造 EIP-7702 授權資料（Tuple）
+>
+> ```javascript
+> const authorization = {
+>     chain_id: 0,
+>     address: smart_account_address, // singleton 智能帳戶邏輯合約地址
+>     nonce: 0,
+>     y_parity: v,
+>     r: r,
+>     s: s,
+> };
+> ```
+>
+> # Step 5：上鏈提交 EIP-7702 交易
+>
+> 建構一筆交易，使用 type `0x04`（EIP-7702 類型），其 authorizations 陣列中包含上面構造的 authorization：
+>
+> -   這筆交易將 recoveredAddress 設為 smart_account_address 的代理。
+> -   帳戶成功轉化為智能帳戶！
+>
+> # Step 6: 初始化智能帳戶（可選，但常見）
+>
+> 部署後的智能帳戶需要初始化，依照你的設計邏輯可能包括：
+>
+> -   設定 owner（可為 EOA、Passkey、MPC、社交恢復等）
+> -   設定簽名邏輯與授權模式
+> -   綁定外部控制機制或策略模組
+>
+> 這步驟依賴你的帳戶合約邏輯，可以在上鏈交易中一次性完成（constructor/init call）。
+
 <!-- Content_END -->

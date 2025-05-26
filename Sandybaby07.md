@@ -111,4 +111,32 @@ ps3:錢包服務提供商的應用：錢包服務商可以幫沒幣的使用者�
 #### 錢包服務
 User 在使用錢包服務時最大的進入障礙往往是註記詞、私鑰的問題，在passkey普及的狀況下，所有需要密碼登入的服務都紛紛採用無密碼登入的方式，作為開發者也很期待把這格功能在web3錢包上實現，但是在7702還沒出來之前，使用4337搭配Passkey的實作仍不盡理想，沒有經驗的使用者使用的合約還是會受第三方制約，不夠去中心化，而EOA上搭載合約德發生，大大提升了可用性，使用者可以完全自託管錢包，同樣可以在無密碼的場景下使用合約錢包，另外gas station 的服務不在指定原生幣作為燃料，降低初學者的使用門檻，也讓服務保有很大的彈性。
 
+### 2025.05.19
+
+ㆍEIP-7702: Set EOA account code
+User signs over [ChainID, Contract_Wannabe, Nonce] with his
+private key and gets transformed into the Contract_Wannabe,可以自己發送安裝合約的交易或是由服務幫忙
+
+ChainID=0 means transformation is applicable to any chain
+but Nonce has to match,當設定Chain id =0時表示EOA在任何鏈都可以變成SCA,但是要注意在各個鏈上的nonce一樣要照順序,要注意
+
+ㆍContract_Wannabe=0 means transforming back to EOA
+
+即便變成SCA還是能做原本的EOA的流程
+
+安全程度與原本的EOA是相通的,仍然好好保管私鑰
+
+Storage不會被清空,更換合約時要注意,即便變回EOA也是一樣
+
+沒有初始化的動作,沒有搶跑問題,,在變成合約錢包之前要檢查EOA signature
+
+### 2025.05.20
+msg.sender 的安全假設檢查在7702的架構下假設交易發起 tx.origin為EOA不再可行
+
+msg.sender==tx.origin 來判斷重入攻擊也會失效,開發者必須假設所有的參與者有可能是合約
+
+需要注意是否實作ERC721或ERC777等token 需要的hook functions ,確保user可以與主流的協議兼容
+
+
+
 <!-- Content_END -->

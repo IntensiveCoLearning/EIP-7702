@@ -285,6 +285,74 @@ const tx = {
 const receipt = await relayer.sendTransaction(tx);
 console.log("交易哈希:", receipt.hash);
 ```
+### 2025.05.19
+* **摘要**：Viem 对 EIP‑7702 提供了原生支持，包括在文档与 API 中专门的扩展，使您能够生成并管理授权元组 `(chain_id, contract_address, nonce, y_parity, r, s)`，无需手动构造，即可在链上调用中使用授权列表。
+
+* **EIP‑7702 扩展位置**：
+
+  * 在官方文档的 “EIP‑7702” 专栏（版本 2.29.4）中详细介绍了该提案及其在 Viem 中的实现。
+  * EIP‑7702 本身定义了一种新的以太坊交易类型（`0x04`），允许 EOA 将执行权限委托给智能合约，实现批量操作、燃气赞助以及权限委派。
+
+* **核心动作（Actions）**：
+
+  * **prepareAuthorization**：准备授权数据的哈希输入。
+  * **signAuthorization**：签名授权并返回已封装的授权元组，直接可用于 `authorizationList`。
+
+* **辅助工具（Utilities）**：
+
+  * **hashAuthorization**：对授权数据进行哈希计算。
+  * **recoverAuthorizationAddress**：从授权签名中恢复签名者地址。
+  * **verifyAuthorization**：验证授权签名的合法性。
+
+* **集成指南**：
+
+  * **合约调用示例**：展示如何将 `authorizationList` 传递给客户端的 `execute`（或等效）方法，以在 EIP‑7702 上下文中调用合约函数。
+  * **交易发送示例**：
+
+    ```ts
+    import { encodeFunctionData } from 'viem'
+    import { privateKeyToAccount } from 'viem/accounts'
+    import { walletClient } from './config'
+    import { abi, contractAddress } from './contract'
+
+    const eoa = privateKeyToAccount('0x...')
+    const authorization = await walletClient.signAuthorization({
+      account: eoa,
+      contractAddress,
+    })
+    const hash = await walletClient.sendTransaction({
+      to: eoa.address,
+      data: encodeFunctionData({ abi, functionName: 'initialize' }),
+      authorizationList: [authorization],
+    })
+    ```
+
+    提交一个 EIP‑7702 交易，使 EOA 委托合约执行初始化逻辑。
+
+* **批量与赞助示例**：
+
+  * 准备多个授权以实现原子化多步流程（如 ERC‑20 批准与转账），并可由中继者代付燃气：
+
+    ```ts
+    const auth1 = await client.signAuthorization({ contractAddress: A })
+    const auth2 = await client.signAuthorization({ contractAddress: B })
+    const txHash = await client.execute({
+      address: eoa.address,
+      batches: [ /* ... */ ],
+      authorizationList: [auth1, auth2],
+    })
+    ```
+
+    可将多个操作捆绑为一个事务，同时保持私钥离线。
+
+* **生态系统集成**：
+
+  * **Wagmi**：已将 Viem 的 EIP‑7702 支持上游合并，提供 React Hooks。
+  * **Foundry & QuickNode**：示例代码展示如何在本地分叉及主网中通过 Viem 客户端测试 EIP‑7702。
+
+  ### 2025.05.20
+  ![测试中](./images//none/1.PNG)
+
 
 
 

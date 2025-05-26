@@ -124,4 +124,31 @@ Smart Wallet Account 則是以 EOA 作為某個 Smart Contract Wallet 的 owner�
 - 4337 建立 smart wallet account 的資料存在於 PackedUserOperation.initCode。initCode 資料如果以 7702 開頭並以 0x00 填充，則表示此 account 是使用 7702 部署。initCode 不會和 factory 合約互動。initCode 超過 20 bytes，其餘的資料會用於初始化
 - https://eips.ethereum.org/EIPS/eip-4337#support-for-eip-7702-authorizations
 
+### 2025.05.20
+
+- 在 7702 的設計底下，由於 EOA 仍保留了直接發送交易的能力，所以其 private key 仍有非常大的權力
+- 透過 Nick's Method 以構造出來的 ECDSA 簽名發送 7702 authorization 的資料讓一個沒有私鑰的 EOA 升級成 7702 set account，然後初始化一組 key 做管理。這樣就能削減 EOA 權限過大的問題。
+- https://blog.biconomy.io/prep-deep-dive
+
+### 2025.05.21
+
+- 本文闡明了 4337 frontrun 相關的經驗
+- https://www.notion.so/ananthvivekanand/Adventures-in-ERC4337-frontrunning-1f0c5df4b3ed80278d83c9d7d87a3784
+
+### 2025.05.22
+
+#### 和 3074 的比較
+
+- 3074 引入兩個新的 opcode，`AUTH` opcode 可以讓 Alice's EOA 授權給 Invoker Contract，使其可以以 `AUTHCALL` 以 Alice's EOA 做為 sender 和其他合約互動
+- 3074 並不會讓 EOA 的 code region 固定，而是以簽名讓 EOA 暫時可以使用 Invoker Contract 的邏輯。7702 則會直接去修改 EOA 的 code region
+- https://eips.ethereum.org/EIPS/eip-3074
+
+### 2025.05.22
+
+#### 和 3074 的比較
+
+- 3074 引入兩個新的 opcode，`AUTH` opcode 可以讓 Alice's EOA 授權給 Invoker Contract，使其可以以 `AUTHCALL` 以 Alice's EOA 做為 sender 和其他合約互動
+- 3074 並不會讓 EOA 的 code region 固定，而是以簽名讓 EOA 暫時可以使用 Invoker Contract 的邏輯。7702 則會直接去修改 EOA 的 code region
+- https://eips.ethereum.org/EIPS/eip-3074
+
 <!-- Content_END -->

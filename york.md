@@ -60,9 +60,66 @@ Key Points
 Note Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day04.md
 
 ### 2025.05.18
+#### EIP-7702 Modular Architecture with PREP
+Key Points
+1. What is PREP (Programmable Runtime EOA Proxy)  
+2. Stateless delegation and modular logic  
+3. Why modular Smart Accounts matter  
+
+Note Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day05.md
+
+### 2025.05.19
+#### Persistent Delegation and Multi-chain Use
+Key Points
+1. Moving from single-use to persistent delegation  
+2. Cross-chain authorization with `chainId = 0`  
+3. Smart Account evolution: 4337, 7702, and beyond 
+
+Note Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day06.md
+
+### 2025.05.20
+#### Future of EIP-7702 and Modular Account Ecosystem
+Key Points
+1. How EIP-7702 fits into ERC-6900 modular AA
+2. Delegation as plug-in logic
+3. ZyFi’s vision: infra-light, user-first abstraction
+
+Notre Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day07.md
+
+### 2025.05.21
+#### Real-world EIP-7702 Application: Ambire Wallet
+Key Points
+1. How Ambire integrates EIP-7702 into its wallet
+2. Gasless transactions and ERC-20 fee payment
+3. Temporary smart account logic with no address change
+4. Batch execution and transaction simulation
+5. Recovery and session key support for secure UX
+
+Note Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day08.md
 
 
+### 2025.05.22
+#### Real-world EIP-7702: Privy and ZeroDev
+Key Points 
+1. Sign EIP-7702 authorizations with embedded wallets  
+2. Enable gasless transactions with Paymaster via ZeroDev  
+3. Configure custom wallet UI using PrivyProvider  
+4. Create temporary smart accounts (7702 kernel) via SDK
+
+Note Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day09.md
 
 
+### 2025.05.23
+#### Advanced EIP-7702: Insecure Delegation Patterns in Practice
+Key Points
+1. Unprotected execute() calls drain delegated accounts
+2. The Illusion of Guardians
+3. Anyone Can Initialize: Insecure Setup of Delegated Contracts
+4. Replayable Signatures: Initialization Can Be Cloned Across Chains
+5. Upgrade and Storage Collision
+6. Replay Attack: oneTimeSend Without Nonce Allows Unlimited Withdrawals
+7. Safe Upgrade with Nonce and Slot Cleanup
+
+Note Link: https://github.com/Yorkchung/EIP-7702-Learning/blob/main/Day10.md
 
 <!-- Content_END -->

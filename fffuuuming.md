@@ -550,4 +550,220 @@ Since **A single malicious 7702 type signature can drain your entire wallet in a
 next: see how re-delegation work & the concrn of collsion, see the private key management
 
 ### 2025-05-19
+#### [ERC-7201: Namespaced Storage Layout]((https://eips.ethereum.org/EIPS/eip-7201))
+It introduces a new annotation: ```/// @custom:storage-location identifier``` used in **NatSpec comments** to indicate where in storage a particular set of variables is stored
+
+**Motivation**:
+- In Solidity and Vyper, in default, variables are laid out sequentially, and mappings and dynamic arrays use ```keccak256``` hashing to compute storage slots, to prevent overwriting.
+    - In **Modular contracts using ```DELEGATECALL```** : All contracts share the same storage
+    - In **Upgradeable contracts (proxy-logic)**: Difficult for newer contract version to introduce new variables
+- Developers use manual storage layout by assigning **pseudorandom roots** (like a ```keccak256("MyNamespace")```) to structs or modulee, and store variables under that root — like **creating separate “sub-trees”**
+    - The Solidity/Vyper compilers don’t know this layout
+    - Tools (like block explorers or static analyzers) can’t interpret it correctly.
+- ERC-7201:  standardizes the way to document this layout:
+    - Use ```@custom:storage-location``` in NatSpec to declare storage roots.
+    - Defines a formula to derive a slot from an identifier (e.g. ```keccak256("my.module.storage")```) — making it collision-safe with existing Solidity storage trees.
+
+**Structure**:
+- Each namespace must be a struct, and annotated with a NatSpec comment
+- ```@custom:storage-location <FORMULA_ID>:<NAMESPACE_ID>```
+    - ```<FORMULA_ID>```: Identifies a formula used to compute the storage location where the namespace is rooted, based on the ```NAMESPACE_ID```
+    - ```NAMESPACE_ID```: a string that identifies a namespace in a contract
+- Instead of using default layout (root at slot 0), namespace allows you choose your own root (based on formula & namespace id), and place your variables there, with its values laid out following the same rules as the default storage layout (mapping, dynamic array)
+
+For example:
+```solidity!
+/// @custom:storage-location erc7201:foobar
+struct FoobarStorage {
+    uint256 value;
+    address owner;
+}
+```
+➡️ “The storage for this struct is located at a namespace with id ```"foobar"``` rooted at ```erc7201("foobar")”```
+
+**Formula**: ```erc7201(id: string) = keccak256(keccak256(id) - 1) & ~0xff```
+
+**Rationale**
+```
+L_root := root 
+        | L_root + n 
+        | keccak256(L_root) 
+        | keccak256(H(k) ⊕ L_root) 
+        | keccak256(L_root ⊕ H(k))
+```
+- ```keccak256(id) - 1```: 
+    - Dynamic data structures may use ```keccak256(slot) + n```
+    - ```keccak256(id) - 1``` may not be enough since namespaces can be larger than 1 slot and would extend into keccak256(id) + n
+    - A second hash ```keccak256(keccak256(id) - 1)``` guarantee that namespaces are completely disjoint from standard storage, thanks for ```keccak256``` collision resistance
+#### [ERC-7779: Interoperable Delegated Accounts](https://eips.ethereum.org/EIPS/eip-7779)
+Interface for delegated EOA to enable better redelegation  and storage management between wallets
+![截圖 2025-05-19 晚上9.38.48](https://hackmd.io/_uploads/S10KV3dbgl.png)
+#### TODO Learning:
+- re-delegation related eip
+- Gas fee model: [EIP-1559](https://eips.ethereum.org/EIPS/eip-1559)
+- [EIP-2929](https://eips.ethereum.org/EIPS/eip-2929), [EIP-2930](https://eips.ethereum.org/EIPS/eip-2930)
+- Shard Blob Transaction: [EIP-4844](https://eips.ethereum.org/EIPS/eip-4844)
+- Storaged banned instruction: [EIP-7562](https://eips.ethereum.org/EIPS/eip-7562)
+- [Use case EXP-0001](https://ithaca.xyz/updates/exp-0001)
+- Private key management: [EIP-7851](https://eips.ethereum.org/EIPS/eip-7851)
+- Domain separator: [EIP-712](https://eips.ethereum.org/EIPS/eip-712)
+- Wallet call API: [EIP-5792](https://eips.ethereum.org/EIPS/eip-5792)
+- EIP-4337
+
+next: EIP-7779 detail, private key management, eip-4337
+
+### 2025-05-20
+#### [EIP-7851: Deactivate/Reactivate a Delegated EOA's Key](https://eips.ethereum.org/EIPS/eip-7851)
+This EIP introduces new precompiled contract to allow delegated EOA to deactivate/reactivate their private keys, by **appending the ```0x00```byte at the end of the delegated code**
+- Active state: ```0xef0100 || address```
+- Deactivated state: ```0xef0100 || address || 0x00```. The private key is deactivated and cannot sign transactions or EIP-7702 delegation authorizations..
+---
+**Validation check**:
+- What: whether a private key is deactivated (identified by a code prefix ```0xef0100``` and a code length of ```24```)
+- When:
+    | Stage | What’s Happening? |
+    | ----- | ----------------- |
+    |     Transaction Pool   |            When a node receives a new transaction       |
+    | Block Inclusion/Execution  | Miner/validator perform transaction validity checks before execution           |
+---
+**Additional Tx Validation Overhead**
+Due to EIP-3607 and EIP-7702, nodes already load the account code during transaction validation to verify whether the sender is an EOA (empty code or code with prefix ```0xef0100```),
+
+---
+**Backwards Compatibility**
+Protocol, Dapp, contract... should
+- Always check prefix ```0xef0100``` to detect EIP-7702-style delegated EOAs.
+- When parsing delegated address:
+    - Use strict offset-based slicing: skip first 3 bytes, read next 20 bytes.
+	- Ignore extra bytes after (like the 0x00 deactivation flag).
+- Avoid over-restrictive checks like ```require(code.length == 23);```
+
+For example:
+```solidity!
+require(code.length >= 23);         // ✅ safe
+require(code[0..3] == 0xef0100);    // ✅ check prefix
+delegatedAddress = code[3..23];    // ✅ read proper offset
+```
+---
+
+**Security Considerations: Signatures Outside of Transactions**
+
+Contracts that have already been deployed and use ECDSA ```secp256k1``` signatures outside of transaction signatures (e.g., ```ERC-20``` tokens that support ```permit()``` in [ERC-2612](https://eips.ethereum.org/EIPS/eip-2612)) will not be able to verify the deactivated status of the EOA -> **signatures already signed by private keys will remain valid in these functions**.
+- **For Upgradable contract**: Manually add check to use ```EXTCODESIZE``` and ```EXTCODECOPY``` to verify that whether code start with ```0xef0100``` and has ```0x00``` in the end;
+- **For non-upgradeable contracts**: Modify the ```ecRecover``` precompile
+- **Contracts with own signature verification logic without relying on ```ecRecover```**: oops
+
+---
+#### [ERC-4337: Account Abstraction Using Alt Mempool](https://eips.ethereum.org/EIPS/eip-4337)
+![截圖 2025-05-20 晚上11.23.25](https://hackmd.io/_uploads/SyCORfq-gg.png)
+---
+**Reference**:
+- [A deep dive into the main components of ERC-4337: Account Abstraction Using Alt Mempool — Part 1](https://medium.com/oak-security/a-deep-dive-into-the-main-components-of-erc-4337-account-abstraction-using-alt-mempool-part-1-3a1ed1bd3a9b)
+
+### 2025-05-21
+#### [ERC-4337: Account Abstraction Using Alt Mempool](https://eips.ethereum.org/EIPS/eip-4337)
+---
+**Overview**:
+Users sign ```UserOperations``` via their smart contract wallet. -> ```UserOps``` go into an ```alt mempool``` watched by a **Bundler** -> Bundler packages multiple ```ops``` into one bundle transaction to the ```EntryPoint``` contract -> ```EntryPoint``` validates each ```UserOp``` (with optional ```Paymaster``` sponsorship or ```Aggregator``` signature schemes) and then calls the user’s Smart Account to execute the desired action, ensuring the Bundler is paid from the user’s or paymaster’s deposit.
+
+---
+**Bundler**
+![截圖 2025-05-21 晚上11.34.10](https://hackmd.io/_uploads/SyBtfOiWxx.png)
+1. **Receiving UserOps**: Validators who want to capture  ```UserOp``` fees must run a bundler or use a bundler service to intercept them 
+    - Some infrastructure companies, such as Alchemy and Stackup, provide "**bundlers as a service**" solutions so that dapp developers don't have to worry about this.
+    - Questions: Does Bundler & alt mempool has the problem like the traditional mempool like MVE, front-running and so on?
+
+**Reference**:
+- [A deep dive into the main components of ERC-4337: Account Abstraction Using Alt Mempool — Part 1](https://medium.com/oak-security/a-deep-dive-into-the-main-components-of-erc-4337-account-abstraction-using-alt-mempool-part-1-3a1ed1bd3a9b)
+
+#### TODO Learning:
+- re-delegation related eip
+- Gas fee model: [EIP-1559](https://eips.ethereum.org/EIPS/eip-1559)
+- [EIP-2929](https://eips.ethereum.org/EIPS/eip-2929), [EIP-2930](https://eips.ethereum.org/EIPS/eip-2930)
+- Shard Blob Transaction: [EIP-4844](https://eips.ethereum.org/EIPS/eip-4844)
+- Storaged banned instruction: [EIP-7562](https://eips.ethereum.org/EIPS/eip-7562)
+- [Use case EXP-0001](https://ithaca.xyz/updates/exp-0001)
+- Private key management: [EIP-7851](https://eips.ethereum.org/EIPS/eip-7851)
+- Domain separator: [EIP-712](https://eips.ethereum.org/EIPS/eip-712)
+- Wallet call API: [EIP-5792](https://eips.ethereum.org/EIPS/eip-5792)
+- EIP-4337
+- Native AA: [EIP-7701](https://eips.ethereum.org/EIPS/eip-7701)
+- Permit Extension for EIP-20 Signed Approvals : [ERC-2612](https://eips.ethereum.org/EIPS/eip-2612)
+
+next: deep dive into erc-4337
+
+### 2025-05-22
+**UserOperation**: High level pseudo-transaction that package up users' intent
+- Normal transaction part:
+    ```tex
+    to, calldata, maxFeePerGas, maxPriorityFeePerGas, nonce, signature.
+    ```
+- Important additional fields:
+
+
+| Field    | Type     | Description |
+| -------- | -------- | -------- |
+|` sender` | `address`| SCA who makes & executes the `UserOp`        |
+|    `factory`      |    `address`      |  Account Factory for new Accounts / `0x7702` flag for EIP-7702 Accounts / `address(0) `       |
+|     `factoryData`     |     `bytes`     |  Data for `factory` / EIP-7702 initialization data / empty array        |
+| `callGasLimit`         | `uint256`         | For the main execution call      |
+| `verificationGasLimit`         | `uint256`         |  For validation |
+| `preVerificationGas`         | `uint256`         | Covering the bundler’s cost of processing the `UserOp` before execution, such as signature validation, calldata parsing         |
+| `paymaster`         | `address`         |Paymaster contract, empty if `sender` pays gas in person         |
+| `paymasterVerificationGasLimit`         | `uint256`         |Allocate for the paymaster validation code (e.g. checking if it agrees to sponsor the transaction)         |
+| `paymasterPostOpGasLimit`         |  `uint256`        |     For the paymaster post-operation code     |
+|  `paymasterData`        |   `bytes`       |   Data for paymaster       |
+|  `signature`        |  `bytes`        | Data passed into the `sender` to verify authorization         |
+---
+- `signature` field usage is defined by the SCA implementation.
+- `signature` MUST depend on `chainid` and `EntryPoint` to prevent **replay attacks**, either cross-chain or with multiple EntryPoint contract versions
+    - Does `UserOp` contains `chainid` ?
+- EIP-7702 `authorization_tuple` value can be provided alongside the `UserOp` struct, but `authorization_tuple` are not included in the `UserOp` itself.
+    - So does this tuple is processed and place the `delegated code` to EOA's `code` field just before any ERC-4337 action ? such as parsing, validating `UserOp`
+
+### 2025-05-23
+**Entrypoint**
+The core interface of the EntryPoint contract is:
+```solidity
+function handleOps(PackedUserOperation[] calldata ops, address payable beneficiary);
+```
+- `beneficiary`: The address that will be paid with all the gas fees collected during the execution of the bundle.
+---
+**Smart Contract Account Interface**
+- **core interface**:
+    ```solidity!
+    interface IAccount {
+      function validateUserOp
+          (PackedUserOperation calldata userOp, bytes32 userOpHash, uint256 missingAccountFunds)
+          external returns (uint256 validationData);
+    }
+    ```
+    - `userOpHash`: A hash over `userOp` (except `signature`), `entryPoint` and `chainId`
+- optional:
+    ```solidity!
+    interface IAccountExecute {
+      function executeUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash) external;
+    }
+    ```
+    - without: `EntryPoint` does `sender.call(userOp.callData);`
+    - with:  `IAccountExecute(sender).executeUserOp(userOp, userOpHash);`
+    - give more flexibility and control such preprocessing, batch operation, custom permission checks
+---
+**Semi-abstracted Nonce Support**
+
+- Traditional `nonce` is **single**, **strictly increasing** number, which limits flexibility — **every operation must follow a strict one-by-one order**.
+- By dividing `nonce` into **`key`** and **`sequence`**, it introduces more freedom and flexibility for managing replay protection and ordering
+    - Parallel transaction streams (e.g., nonce key 1 for gasless txs, key 2 for secure txs),
+	-	Custom nonce strategies, like non-sequential approvals or batch execution,
+	-	More scalable and modular wallet design.
+- Method defined in the `EntryPoint` interface to expose these values:
+    ```solidity!
+    function getNonce(address sender, uint192 key) external view returns (uint256 nonce);
+    ```
+    - When preparing the `UserOp`, bundlers may and should start with `getNonce` to ensure the transaction has a valid `nonce` field.
+    - If the bundler is willing to accept multiple `UserOp` by the same sender into their `alt mempool`, this bundler is supposed to track the `key` and `sequence` pair of the `UserOp` already added in the mempool.
+- For each `key`, the `sequence` is validated by the `EntryPoint` for each `UserOperation`, if the nonce validation fails, the `UserOperation` is considered invalid and the bundle is reverted
+    - Dos or grief attack ?
+    - mitigate by **simulation (mentioned later)** , **reputation Systems** and **Paymaster Penalization**
+ 
 <!-- Content_END -->
