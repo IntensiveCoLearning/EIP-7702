@@ -229,4 +229,8 @@ Companion Account: An application-specific smart account that acts as an interme
 
 对于 app dev 来说，不同的 wallet 会使用不同的实现，所以需要兼容主流的钱包的一些方法，而且不是所有 chain 都会支持，这样的话，岂不是会造成 app 端更加的混乱？
 
+## https://hackmd.io/@colinlyguo/SyAZWMmr1x
+
+TODO 一个 7702 权限管理平台，类似 Web3 的 Google Account，用户可以签约授权，然后方便外面的 Web2、Web3 网站使用 OIDC 来调用当前权限管理平台进行登录。统一了登录接口，然后避免用户泄露了私钥，然后支持授权。
+
 <!-- Content_END -->
