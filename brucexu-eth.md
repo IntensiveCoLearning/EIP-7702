@@ -154,4 +154,79 @@ TODO 做一个 7702 小游戏，I need your help，跟朋友一起玩，可以�
 - Preserve Privacy: Support ERC-20 gas payments, session keys, public mempools to minimize data exposure
 - Use Proxies: Delegate to proxies for upgrades and modularity without requiring additional EIP-7702 authorizations for each change
 
+# 2025.05.28
+
+## ERC-4337 基础知识
+
+用户发送 UserOperation 的交易，包含更多指令和附加数据等。发送到 mempool 节点上。大概结构如下：
+
+```
+    struct UserOperation {
+        address sender;
+        uint256 nonce;
+        bytes initCode;
+        bytes callData;
+        uint256 callGasLimit;
+        uint256 verificationGasLimit;
+        uint256 preVerificationGas;
+        uint256 maxFeePerGas;
+        uint256 maxPriorityFeePerGas;
+        bytes paymasterAndData;
+        bytes signature;
+    }
+```
+
+mempool 里面的 bundler 会将 UserOperation 打包成真实交易。
+
+Bundler 是一个 mempool，监听 UserOperation，将多个 UserOperation 打包成一个交易，然后提交给 EntryPoint 合约，通过抽取 gas fee 维持。
+
+EntryPoint 是一个单例智能合约，验证和执行 UserOperation，通过 calldata 来执行，从智能合约账户中取 gas 来支付。
+
+Paymaster 也是一个智能合约，处理 Gas 支付方式等，消除原生代币才能支付 gas 的限制，实现代付。
+
+## https://blog.biconomy.io/a-comprehensive-eip-7702-guide-for-apps/
+
+EIP-7702 aims to solve these user experience issues by allowing EOAs to delegate their execution to smart contracts, effectively giving them programmable capabilities without requiring users to migrate to entirely new wallets.
+
+In simpler terms, your EOA can say: "When I receive transactions, run this smart contract code instead."
+
+How It Works:
+
+- A user signs a special authorization message from their EOA
+- This authorization is included in a transaction
+- When processed, the Ethereum network records that this EOA should delegate to a specific smart contract
+- Future transactions to this EOA will execute the smart contract's code 注意，这个 tx 可以是外部发起对当前 EOA 的调用，这样跟一个 contract 没什么区别，但是调用的上下文是 EOA 的。所以如果 delegate 的合约地址有问题，就比较大了 TODO 做一个安全攻击的 example
+- Importantly, the msg.sender in these transactions remains the EOA's address
+
+This is different from a proxy contract because the delegation happens at the protocol level - there's no separate contract deployed for each user. Instead, the EOA appears to have code attached to it directly.
+
+TODO 黑客松 Transaction Batching demo
+TODO 黑客松 Gas Sponsorship demo
+TODO 黑客松 Permission Management demo
+
+几个限制：
+
+- eoa 的 pk 还是最高权限，可以随时清理 Delegation
+- eoa 的 Delegation 可以更换，所以这个不是真正的不可变合约
+- 多个 chain 需要分别 sign authorization，除非 sign 的时候，chain_id 设置为 0，但是 nonce 每个 chain 是不一样的，所以还是没法用的。导致跨链一致性和互操作性是有问题的
+- app 无法 control eoa 的 7702 delegation，这个是 wallet 端自己的限制，他们拒绝 app 发起的 tx 包含 auth。wallet 会让 eoa 指向自己的实现，但是这样 app 无法引导用户使用自己喜欢的 smart accounts，针对不同的 wallet 会产生不同的实现
+
+TODO 7702 smart account marketplace，列出来不同的 AA 可以让大家选择，可以借用某种机甲风格作为概念，相当于钢铁侠的机甲或者高达，或许变成了某种游戏？比如使用不同的人物角色
+
+其他相关的可以一起使用的 EIP、ERC：
+
+- ERC-7710: Creates a standard interface for smart contracts to delegate permissions to other contracts. Think of it as an extension of the ERC-20 approve function but for arbitrary permissions.
+- ERC-7715: Introduces a new JSON-RPC method called wallet_grantPermissions that applications can use to request permissions from wallets.
+- This approach utilizes the wallet_sendCalls JSON-RPC method defined in ERC-5792
+
+TODO https://blog.biconomy.io/a-comprehensive-eip-7702-guide-for-apps/ 这个加入黑客松
+
+One, often overlooked, feature of EIP-7702 is that it enables developers to deploy new smart accounts for users up to 80% cheaper than before. It achieves this by leveraging the fact that an EIP-7702 proxy costs only 12,500 gas to set up. By using a few clever cryptographic tricks - such as Nick’s method and signature packing - developers can deploy fully featured smart accounts (with support for resource locks, time locks and multi sigs) - by using just EIP-7702.
+
+TODO 使用 PREP 方法部署一个 companion account https://blog.biconomy.io/provably-rootless-eip7702-proxy/
+
+Companion Account: An application-specific smart account that acts as an intermediary between users and applications.
+
+对于 app dev 来说，不同的 wallet 会使用不同的实现，所以需要兼容主流的钱包的一些方法，而且不是所有 chain 都会支持，这样的话，岂不是会造成 app 端更加的混乱？
+
 <!-- Content_END -->
