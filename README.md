@@ -430,6 +430,7 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 
 
 
+
 <!-- STATISTICALDATA_START -->
 ## 统计数据
 
@@ -439,5 +440,5 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 - 全勤用户: Jack-OuCJ, wayhome, qiaopengjun5162, universe-ron, cxc474, fffuuuming, a39955720, york, emailpractice, gardennn, luleigreat, zion
 - 淘汰人数: 25
 - 淘汰率: 58.14%
-- Fork人数: 42
+- Fork人数: 0
 <!-- STATISTICALDATA_END -->
