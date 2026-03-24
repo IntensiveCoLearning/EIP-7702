@@ -158,7 +158,7 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 | [universe-ron](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/universe-ron.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | [cxc474](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/cxc474.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | [fffuuuming](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/fffuuuming.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| [Sandybaby07](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/Sandybaby07.md) | ✅ | ✅ | ⭕️ | ✅ | ⭕️ | ✅ | ✅ | ⭕️ | ⭕️ |   |
+| [Sandybaby07](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/Sandybaby07.md) | ✅ | ✅ | ⭕️ | ✅ | ⭕️ | ✅ | ✅ | ⭕️ | ⭕️ | ❌ |
 | [a39955720](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/a39955720.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | [xwwkk](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/xwwkk.md) | ✅ | ✅ | ⭕️ | ⭕️ | ✅ | ✅ | ⭕️ | ⭕️ | ❌ | |
 | [bamboochen92518](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/bamboochen92518.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ | ❌ | | |
@@ -167,7 +167,7 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 | [Ellen](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/Ellen.md) | ⭕️ | ⭕️ | ❌ | | | | | | | |
 | [evshary](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/evshary.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ | ❌ | | |
 | [emailpractice](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/emailpractice.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| [wiasliaw](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/wiasliaw.md) | ✅ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ | ✅ | ✅ | ✅ |   |
+| [wiasliaw](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/wiasliaw.md) | ✅ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ | ✅ | ✅ | ✅ | ⭕️ |
 | [BillyC](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/BillyC.md) | ⭕️ | ⭕️ | ✅ | ✅ | ❌ | | | | | |
 | [tofudfy](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/tofudfy.md) | ⭕️ | ⭕️ | ❌ | | | | | | | |
 | [gpteth](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/gpteth.md) | ✅ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ | ⭕️ | ❌ | | |
@@ -175,15 +175,15 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 | [gardennn](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/gardennn.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | [narnona](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/narnona.md) | ⭕️ | ⭕️ | ❌ | | | | | | | |
 | [nghdavid](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/nghdavid.md) | ⭕️ | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ | ✅ | ✅ |
-| [easyshellworld](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/easyshellworld.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ |   |
+| [easyshellworld](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/easyshellworld.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ | ❌ |
 | [alichaw](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/alichaw.md) | ✅ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ | ⭕️ | ❌ | | |
 | [ygy-1231](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/ygy-1231.md) | ⭕️ | ⭕️ | ❌ | | | | | | | |
 | [luleigreat](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/luleigreat.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | [blahole](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/blahole.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ | ❌ | | |
 | [wodeche](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/wodeche.md) | ⭕️ | ⭕️ | ❌ | | | | | | | |
 | [helloworldsmart](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/helloworldsmart.md) | ✅ | ⭕️ | ⭕️ | ❌ | | | | | | |
-| [alexliao](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/alexliao.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |   |
-| [chesley666](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/chesley666.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ | ✅ |   |
+| [alexliao](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/alexliao.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ |
+| [chesley666](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/chesley666.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⭕️ | ✅ | ⭕️ |
 | [kevinsslin](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/kevinsslin.md) | ⭕️ | ✅ | ⭕️ | ✅ | ✅ | ⭕️ | ⭕️ | ❌ | | |
 | [zion](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/zion.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | [kris77z](https://github.com/IntensiveCoLearning/EIP-7702/blob/main/kris77z.md) | ⭕️ | ✅ | ✅ | ✅ | ⭕️ | ⭕️ | ⭕️ | ❌ | | |
@@ -629,14 +629,15 @@ EOA 智能合约以及应用：https://hackmd.io/@colinlyguo/SyAZWMmr1x
 
 
 
+
 <!-- STATISTICALDATA_START -->
 ## 统计数据
 
 - 总参与人数: 43
-- 完成人数: 20
-- 完成用户: Jack-OuCJ, wayhome, nx-xn2002, qiaopengjun5162, MRzzz-cyber, universe-ron, cxc474, fffuuuming, Sandybaby07, a39955720, york, emailpractice, wiasliaw, gardennn, nghdavid, easyshellworld, luleigreat, alexliao, chesley666, zion
-- 全勤用户: Jack-OuCJ, wayhome, qiaopengjun5162, universe-ron, cxc474, fffuuuming, a39955720, york, emailpractice, gardennn, luleigreat, alexliao, zion
-- 淘汰人数: 23
-- 淘汰率: 53.49%
+- 完成人数: 18
+- 完成用户: Jack-OuCJ, wayhome, nx-xn2002, qiaopengjun5162, MRzzz-cyber, universe-ron, cxc474, fffuuuming, a39955720, york, emailpractice, wiasliaw, gardennn, nghdavid, luleigreat, alexliao, chesley666, zion
+- 全勤用户: Jack-OuCJ, wayhome, qiaopengjun5162, universe-ron, cxc474, fffuuuming, a39955720, york, emailpractice, gardennn, luleigreat, zion
+- 淘汰人数: 25
+- 淘汰率: 58.14%
 - Fork人数: 41
 <!-- STATISTICALDATA_END -->
